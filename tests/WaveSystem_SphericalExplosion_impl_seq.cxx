@@ -77,7 +77,7 @@ void WaveSystem_impl_seq(double tmax, int ntmax, double cfl, int output_freq, co
     double time=0.;
     double dt = cfl * dx_min / c0;
     
-    cout << "Saving the solution at T=" << time << endl;
+    cout << "Saving the solution at time t=" << time << endl;
     pressure_field.setTime(time,it);
     pressure_field.writeMED("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_pressure");
     velocity_field.setTime(time,it);
@@ -116,7 +116,7 @@ void WaveSystem_impl_seq(double tmax, int ntmax, double cfl, int output_freq, co
         /* Sauvegardes */
         if( it%output_freq==0 or it>=ntmax or isStationary or time >=tmax )
         {
-            cout<<"-- Iteration: " << it << ", Time: " << time << ", dt: " << dt<<endl;
+            cout<<"-- Iteration: " << it << ", time: " << time << ", dt: " << dt<<endl;
 
             for(int k=0; k<nbCells; k++)
             {
@@ -155,7 +155,7 @@ void WaveSystem_impl_seq(double tmax, int ntmax, double cfl, int output_freq, co
     else if(isStationary)
         cout<< "Régime stationnaire atteint au pas de temps "<< it<< ", t= "<< time<<endl;       
     else
-        cout<< "Temps maximum Tmax= "<< tmax<< " atteint"<<endl;
+        cout<< "Temps maximum tmax= "<< tmax<< " atteint"<<endl;
 
     VecDestroy(&Un);
     VecDestroy(&dUn);
@@ -165,7 +165,7 @@ void WaveSystem_impl_seq(double tmax, int ntmax, double cfl, int output_freq, co
 int main(int argc, char *argv[])
 {
     cout << "-- Starting the RESOLUTION OF THE 2D WAVE SYSTEM"<<endl;
-    cout << "- Numerical scheme : Upwind explicit scheme" << endl;
+    cout << "- Numerical scheme : Upwind implicit scheme" << endl;
     cout << "- Boundary conditions : WALL" << endl;
 
      PetscInitialize(&argc, &argv, NULL, NULL);

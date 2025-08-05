@@ -89,7 +89,7 @@ void WaveSystem_impl_mpi(double tmax, int ntmax, double cfl, int output_freq, co
         velocity_field=Field("Velocity",CELLS,my_mesh,dim) ;
         initial_conditions_shock(my_mesh,pressure_field, velocity_field);
     
-        cout << "Saving the solution at T=" << time <<"  on processor 0"<<endl;
+        cout << "Saving the solution at time t=" << time <<"  on processor 0"<<endl;
         pressure_field.setTime(time,it);
         pressure_field.writeVTK(resultDirectory+"/WaveSystem"+to_string(dim)+"DUpwind_"+to_string(size)+"Procs_"+meshName+"_pressure");
         velocity_field.setTime(time,it);
@@ -140,7 +140,7 @@ void WaveSystem_impl_mpi(double tmax, int ntmax, double cfl, int output_freq, co
         /* Sauvegardes */
         if( it%output_freq==0 or it>=ntmax or isStationary or time >=tmax )
         {
-            PetscPrintf(PETSC_COMM_WORLD,"-- Iteration: %d, Time: %f, dt: %f, saving results on processor 0 \n", it, time, dt);
+            PetscPrintf(PETSC_COMM_WORLD,"-- Iteration: %d, time: %f, dt: %f, saving results on processor 0 \n", it, time, dt);
             VecScatterBegin(scat,Un,Un_seq,INSERT_VALUES,SCATTER_FORWARD);
             VecScatterEnd(  scat,Un,Un_seq,INSERT_VALUES,SCATTER_FORWARD);
 
@@ -211,13 +211,13 @@ int main(int argc, char *argv[])
     if(size>1)
         PetscPrintf(PETSC_COMM_WORLD,"---- More than one processor detected : running a parallel simulation ----\n");
         PetscPrintf(PETSC_COMM_WORLD,"---- Limited parallelism : input and output remain sequential ----\n");
-        PetscPrintf(PETSC_COMM_WORLD,"---- Only the matrix-vector products are done in parallel ----\n");
+        PetscPrintf(PETSC_COMM_WORLD,"---- Only the linear system is solved in parallel ----\n");
         PetscPrintf(PETSC_COMM_WORLD,"---- Processor 0 is in charge of building the mesh, saving the results, filling and then distributing the matrix to other processors.\n\n");
         
     if(rank == 0)
     {
         cout << "-- Starting the RESOLUTION OF THE 2D WAVE SYSTEM on "<< size <<" processors"<<endl;
-        cout << "- Numerical scheme : Upwind explicit scheme" << endl;
+        cout << "- Numerical scheme : Upwind implicit scheme" << endl;
         cout << "- Boundary conditions : WALL" << endl;
     
         /* Read or create mesh */

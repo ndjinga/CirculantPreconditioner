@@ -69,7 +69,7 @@ void WaveSystem_seq(double tmax, int ntmax, double cfl, int output_freq, const M
     double time=0.;
     double dt = cfl * dx_min / c0;
     
-    cout << "Saving the solution at T=" << time << endl;
+    cout << "Saving the solution at time t=" << time << endl;
     pressure_field.setTime(time,it);
     pressure_field.writeVTK("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_pressure");
     velocity_field.setTime(time,it);
@@ -98,7 +98,7 @@ void WaveSystem_seq(double tmax, int ntmax, double cfl, int output_freq, const M
         /* Sauvegardes */
         if(it%output_freq==0 or it>=ntmax or isStationary or time >=tmax)
         {
-            cout<<"-- Iteration: " << it << ", Time: " << time << ", dt: " << dt<<endl;
+            cout<<"-- Iteration: " << it << ", time: " << time << ", dt: " << dt<<endl;
 
             for(int k=0; k<nbCells; k++)
             {
@@ -118,14 +118,14 @@ void WaveSystem_seq(double tmax, int ntmax, double cfl, int output_freq, const M
             velocity_field.writeVTK("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_velocity",false);
         }
     }
-    cout<<"End of calculation -- Iteration: " << it << ", Time: "<< time<< ", dt: " << dt<<endl;
+    cout<<"End of calculation -- Iteration: " << it << ", time: "<< time<< ", dt: " << dt<<endl;
 
     if(it>=ntmax)
         cout<< "Nombre de pas de temps maximum ntmax= "<< ntmax<< " atteint"<<endl;
     else if(isStationary)
         cout<< "Régime stationnaire atteint au pas de temps "<< it<< ", t= "<< time<<endl;       
     else
-        cout<< "Temps maximum Tmax= "<< tmax<< " atteint"<<endl;
+        cout<< "Temps maximum tmax= "<< tmax<< " atteint"<<endl;
 
     VecDestroy(&Un);
     VecDestroy(&dUn);

@@ -81,7 +81,7 @@ void WaveSystem_mpi(double tmax, int ntmax, double cfl, int output_freq, const M
         velocity_field=Field("Velocity",CELLS,my_mesh,dim) ;
         initial_conditions_shock(my_mesh,pressure_field, velocity_field);
     
-        cout << "Saving the solution at T=" << time <<"  on processor 0"<<endl;
+        cout << "Saving the solution at time t=" << time <<"  on processor 0"<<endl;
         pressure_field.setTime(time,it);
         pressure_field.writeVTK(resultDirectory+"/WaveSystem"+to_string(dim)+"DUpwind_"+to_string(size)+"Procs_"+meshName+"_pressure");
         velocity_field.setTime(time,it);
@@ -131,7 +131,7 @@ void WaveSystem_mpi(double tmax, int ntmax, double cfl, int output_freq, const M
         /* Sauvegardes */
         if(it%output_freq==0 or it>=ntmax or isStationary or time >=tmax )
         {
-            PetscPrintf(PETSC_COMM_WORLD,"-- Iteration: %d, Time: %f, dt: %f, saving results on processor 0 \n", it, time, dt);
+            PetscPrintf(PETSC_COMM_WORLD,"-- Iteration: %d, time: %f, dt: %f, saving results on processor 0 \n", it, time, dt);
             VecScatterBegin(scat,Un,Un_seq,INSERT_VALUES,SCATTER_FORWARD);
             VecScatterEnd(  scat,Un,Un_seq,INSERT_VALUES,SCATTER_FORWARD);
 
