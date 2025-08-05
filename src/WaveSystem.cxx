@@ -24,46 +24,51 @@ using namespace std;
 
 void initial_conditions_shock(Mesh my_mesh,Field& pressure_field,Field& velocity_field)
 {
-    double rayon=0.15;
-    double xcentre=0.;
-    double ycentre=0;
-    double zcentre=0;
-    
     double x, y, z;
     double val, valX, valY, valZ;
     
     int dim    =my_mesh.getMeshDimension();
     int nbCells=my_mesh.getNumberOfCells();
 
+    double r, r2, rmax=0.3;
+    
+    double xcentre = ( my_mesh.getXMin()+my_mesh.getXMax() )/2;
+    double ycentre;
+    double zcentre;
+
+    if(dim>1)
+    {
+        ycentre = ( my_mesh.getYMin()+my_mesh.getYMax() )/2;
+        if(dim==3)
+            zcentre = ( my_mesh.getZMin()+my_mesh.getZMax() )/2;
+    }
+    /*
+    cout<< "XMin= "<< my_mesh.getXMin() << ", XMax= "<< my_mesh.getXMax() <<endl;
+    cout<< "YMin= "<< my_mesh.getYMin() << ", YMax= "<< my_mesh.getYMax() <<endl;
+    cout<< "ZMin= "<< my_mesh.getZMin() << ", ZMax= "<< my_mesh.getZMax() <<endl;
+    cout<< "Xcentre= "<< xcentre << "Ycentre= "<< ycentre<< "zcentre= "<< zcentre <<endl;
+    */
     for (int j=0 ; j<nbCells ; j++)
     {
         x = my_mesh.getCell(j).x() ;
+        r2=(x-xcentre)*(x-xcentre);
         if(dim>1)
         {
             y = my_mesh.getCell(j).y() ;
+            r2+=(y-ycentre)*(y-ycentre);
             if(dim==3)
+            {
                 z = my_mesh.getCell(j).z() ;
+                r2+=(z-zcentre)*(z-zcentre);                
+            }
         }
 
-        valX=(x-xcentre)*(x-xcentre);
-        if(dim==1)
-            val=sqrt(valX);
-        else if(dim==2)
-        {
-            valY=(y-ycentre)*(y-ycentre);
-            val=sqrt(valX+valY);        
-        }
-        else if(dim==3)
-        {
-            valY=(y-ycentre)*(y-ycentre);
-            valZ=(z-zcentre)*(z-zcentre);
-            val=sqrt(valX+valY+valZ);        
-        }
+        r=sqrt(r2);
         
         for(int idim=0; idim<dim; idim++)
             velocity_field[j,idim]=0;
             
-        if (val<rayon)
+        if (r<rmax)
             pressure_field(j) = 155e5;
         else
             pressure_field(j) = 70e5;
