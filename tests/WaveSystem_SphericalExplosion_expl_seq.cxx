@@ -94,6 +94,7 @@ void WaveSystem_seq(double tmax, int ntmax, double cfl, int output_freq, const M
         it=it+1;
  
         VecNorm(dUn,NORM_2,&norm);
+        isStationary = norm<precision;
         /* Sauvegardes */
         if(it%output_freq==0 or it>=ntmax or isStationary or time >=tmax)
         {
