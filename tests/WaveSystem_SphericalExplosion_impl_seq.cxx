@@ -30,8 +30,8 @@ void WaveSystem_impl_seq(double tmax, int ntmax, double cfl, int output_freq, co
     KSP ksp;
     KSPType ksptype=(char*)&KSPGMRES;
     PC pc;
-    PCType pctype=(char*)&PCBJACOBI;
-    int maxPetscIts=200;//nombre maximum d'iteration gmres autorisé au cours d'une resolution de système lineaire
+    PCType pctype=(char*)&PCILU;
+    int maxPetscIts=1000;//nombre maximum d'iteration gmres autorisé au cours d'une resolution de système lineaire
     int PetscIts;//the number of iterations performed by the linear solver
     KSPConvergedReason reason;
     double residu;
@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
         myMesh=Mesh(filename);
     }
 
-    double cfl=1.e4/myMesh.getSpaceDimension();
+    double cfl=1.e3/myMesh.getSpaceDimension();
     WaveSystem_impl_seq(tmax,ntmax,cfl,freqSortie,myMesh,fileOutPut);
     
     cout << "Simulation complete." << endl;

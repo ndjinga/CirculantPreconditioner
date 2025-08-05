@@ -253,7 +253,7 @@ int main(int argc, char *argv[])
             resultDirectory = argv[2];
     }
     
-    double cfl=1.e4/myMesh.getSpaceDimension();
+    double cfl=1.e3/myMesh.getSpaceDimension();
     WaveSystem_impl_mpi(tmax,ntmax,cfl,freqSortie,myMesh,fileOutPut, rank, size, resultDirectory);
 
     if(rank == 0)
