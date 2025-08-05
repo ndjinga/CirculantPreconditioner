@@ -52,12 +52,20 @@ if( CirculantPreconditioner_WITH_MPI )
  add_test(NAME testWaveSystem_SphericalExplosion_expl_mpi_2D_SQUARE_squares_4procs  COMMAND "${MPIEXEC}" "-n" "4" "./WaveSystem_SphericalExplosion_expl_mpi" )#Default is cartesian mesh
  add_test(NAME testWaveSystem_SphericalExplosion_expl_mpi_3D_CUBE_tetras_2procs     COMMAND "${MPIEXEC}" "-n" "2" "./WaveSystem_SphericalExplosion_expl_mpi" "${PROJECT_SOURCE_DIR}/../meshes/meshCube.med")     
  add_test(NAME testWaveSystem_SphericalExplosion_expl_mpi_3D_CUBE_tetras_4procs     COMMAND "${MPIEXEC}" "-n" "4" "./WaveSystem_SphericalExplosion_expl_mpi" "${PROJECT_SOURCE_DIR}/../meshes/meshCube.med")     
+ add_test(NAME testWaveSystem_SphericalExplosion_impl_mpi_2D_SQUARE_squares_2procs  COMMAND "${MPIEXEC}" "-n" "2" "./WaveSystem_SphericalExplosion_impl_mpi" )#Default is cartesian mesh
+ add_test(NAME testWaveSystem_SphericalExplosion_impl_mpi_2D_SQUARE_squares_4procs  COMMAND "${MPIEXEC}" "-n" "4" "./WaveSystem_SphericalExplosion_impl_mpi" )#Default is cartesian mesh
+ add_test(NAME testWaveSystem_SphericalExplosion_impl_mpi_3D_CUBE_tetras_2procs     COMMAND "${MPIEXEC}" "-n" "2" "./WaveSystem_SphericalExplosion_impl_mpi" "${PROJECT_SOURCE_DIR}/../meshes/meshCube.med")     
+ add_test(NAME testWaveSystem_SphericalExplosion_impl_mpi_3D_CUBE_tetras_4procs     COMMAND "${MPIEXEC}" "-n" "4" "./WaveSystem_SphericalExplosion_impl_mpi" "${PROJECT_SOURCE_DIR}/../meshes/meshCube.med")     
 
  set_tests_properties( 
  testWaveSystem_SphericalExplosion_expl_mpi_2D_SQUARE_squares_2procs
  testWaveSystem_SphericalExplosion_expl_mpi_3D_CUBE_tetras_2procs
  testWaveSystem_SphericalExplosion_expl_mpi_2D_SQUARE_squares_4procs
  testWaveSystem_SphericalExplosion_expl_mpi_3D_CUBE_tetras_4procs
+ testWaveSystem_SphericalExplosion_impl_mpi_2D_SQUARE_squares_2procs
+ testWaveSystem_SphericalExplosion_impl_mpi_3D_CUBE_tetras_2procs
+ testWaveSystem_SphericalExplosion_impl_mpi_2D_SQUARE_squares_4procs
+ testWaveSystem_SphericalExplosion_impl_mpi_3D_CUBE_tetras_4procs
  PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${SOLVERLAB_DIR}/lib:${MEDCOUPLING_DIR}/lib:${MEDFILE_DIR}/lib"
  )
 endif( CirculantPreconditioner_WITH_MPI )
