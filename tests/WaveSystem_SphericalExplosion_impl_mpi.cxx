@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
     // Problem data
     double tmax=0.05;
     int ntmax=2000000;
-    int freqSortie=10;
+    int freqSortie=1;
     string fileOutPut="SphericalWave";
     Mesh myMesh;
     string resultDirectory="./";
