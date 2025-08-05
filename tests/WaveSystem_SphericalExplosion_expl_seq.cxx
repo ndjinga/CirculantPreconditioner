@@ -62,7 +62,7 @@ void WaveSystem_seq(double tmax, int ntmax, double cfl, int output_freq, const M
         }
 
     /*
-     * MED output of the initial condition at t=0 and iter = 0
+     * MED/VTK output of the initial condition at t=0 and iter = 0
      */
     int it=0;
     bool isStationary=false;
