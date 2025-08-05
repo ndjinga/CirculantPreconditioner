@@ -46,8 +46,17 @@ void WaveSystem_impl_mpi(double tmax, int ntmax, double cfl, int output_freq, co
     std::string meshName;
 
     if(rank == 0)
-        globalNbUnknowns=my_mesh.getNumberOfCells()*(my_mesh.getMeshDimension()+1);//nbCells*nbComp
-    
+    {
+        /* Retrieve mesh data */
+        nbCells = my_mesh.getNumberOfCells();
+        dim=my_mesh.getMeshDimension();
+        nbComp=dim+1;        
+        meshName=my_mesh.getName();
+        double dx_min=my_mesh.minRatioVolSurf();
+        dt = cfl * dx_min / c0;
+        
+        globalNbUnknowns=nbCells*nbComp;
+    }
     MPI_Bcast(&globalNbUnknowns, 1, MPI_INT, 0, PETSC_COMM_WORLD);
  
     /* iteration vectors */
@@ -64,8 +73,8 @@ void WaveSystem_impl_mpi(double tmax, int ntmax, double cfl, int output_freq, co
     if(rank == 0)
     {
         int nbVoisinsMax = my_mesh.getMaxNbNeighbours(CELLS);
-        d_nnz=(nbVoisinsMax+1)*(my_mesh.getMeshDimension()+1);//(nbVoisinsMax+1)*nbComp
-        o_nnz= nbVoisinsMax   *(my_mesh.getMeshDimension()+1);//                 nbComp
+        d_nnz=(nbVoisinsMax+1)*nbComp;
+        o_nnz= nbVoisinsMax   *nbComp;
     }
     MPI_Bcast(&d_nnz, 1, MPI_INT, 0, PETSC_COMM_WORLD);
     MPI_Bcast(&o_nnz, 1, MPI_INT, 0, PETSC_COMM_WORLD);
@@ -74,14 +83,6 @@ void WaveSystem_impl_mpi(double tmax, int ntmax, double cfl, int output_freq, co
 
     if(rank == 0)
         {
-        /* Retrieve mesh data */
-        nbCells = my_mesh.getNumberOfCells();
-        dim=my_mesh.getMeshDimension();
-        nbComp=dim+1;        
-        meshName=my_mesh.getName();
-        double dx_min=my_mesh.minRatioVolSurf();
-        dt = cfl * dx_min / c0;
-        
         /* Initial conditions */
         cout<<"Building the initial condition on processor 0" << endl;
         
@@ -120,9 +121,20 @@ void WaveSystem_impl_mpi(double tmax, int ntmax, double cfl, int output_freq, co
     MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(  A, MAT_FINAL_ASSEMBLY);
 
-    //MatView(divMat,    PETSC_VIEWER_STDOUT_WORLD );
+    //MatView(A,    PETSC_VIEWER_STDOUT_WORLD );
 
     MPI_Bcast(&dt, 1, MPI_DOUBLE, 0, PETSC_COMM_WORLD);
+
+    MatShift( A, 1);//Contribution from the time derivative
+    
+    /* PETSc Linear solver (all procs) */
+    KSPCreate(PETSC_COMM_WORLD, &ksp);
+    KSPSetType(ksp, ksptype);
+    KSPSetTolerances( ksp, precision, precision,PETSC_DEFAULT, maxPetscIts);
+    KSPGetPC(ksp, &pc);
+    //PETSc preconditioner
+    PCSetType( pc, pctype);
+    KSPSetOperators(ksp, A, A);
 
     /* Time loop */
     PetscPrintf(PETSC_COMM_WORLD,"Starting computation of the linear wave system on all processors : \n\n");
