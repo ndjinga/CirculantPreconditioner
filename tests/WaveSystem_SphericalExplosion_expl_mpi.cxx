@@ -62,7 +62,10 @@ void WaveSystem_mpi(double tmax, int ntmax, double cfl, int output_freq, const M
     MPI_Bcast(&d_nnz, 1, MPI_INT, 0, PETSC_COMM_WORLD);
     MPI_Bcast(&o_nnz, 1, MPI_INT, 0, PETSC_COMM_WORLD);
 
-       MatCreateAIJ(PETSC_COMM_WORLD,localNbUnknowns,localNbUnknowns,globalNbUnknowns,globalNbUnknowns,d_nnz,NULL,o_nnz,NULL,&divMat);
+    if(rank == 0)
+        MatCreateAIJ(PETSC_COMM_WORLD,localNbUnknowns,localNbUnknowns,globalNbUnknowns,globalNbUnknowns,d_nnz,NULL,o_nnz+(size-1)*d_nnz,NULL,&divMat);
+    else
+        MatCreateAIJ(PETSC_COMM_WORLD,localNbUnknowns,localNbUnknowns,globalNbUnknowns,globalNbUnknowns,d_nnz,NULL,o_nnz,NULL,&divMat);
 
     if(rank == 0)
         {

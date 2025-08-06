@@ -32,7 +32,7 @@ void WaveSystem_impl_mpi(double tmax, int ntmax, double cfl, int output_freq, co
     KSPType ksptype=(char*)&KSPGMRES;
     PC pc;
     PCType pctype=(char*)&PCBJACOBI;
-    int maxPetscIts=200;//nombre maximum d'iteration gmres autorisé au cours d'une resolution de système lineaire
+    int maxPetscIts=1000;//nombre maximum d'iteration gmres autorisé au cours d'une resolution de système lineaire
     int PetscIts;//the number of iterations performed by the linear solver
     KSPConvergedReason reason;
     double residu;
@@ -79,7 +79,10 @@ void WaveSystem_impl_mpi(double tmax, int ntmax, double cfl, int output_freq, co
     MPI_Bcast(&d_nnz, 1, MPI_INT, 0, PETSC_COMM_WORLD);
     MPI_Bcast(&o_nnz, 1, MPI_INT, 0, PETSC_COMM_WORLD);
 
-    MatCreateAIJ(PETSC_COMM_WORLD,localNbUnknowns,localNbUnknowns,globalNbUnknowns,globalNbUnknowns,d_nnz,NULL,o_nnz,NULL,&A);
+    if(rank == 0)
+        MatCreateAIJ(PETSC_COMM_WORLD,localNbUnknowns,localNbUnknowns,globalNbUnknowns,globalNbUnknowns,d_nnz,NULL,o_nnz+(size-1)*d_nnz,NULL,&A);
+    else
+        MatCreateAIJ(PETSC_COMM_WORLD,localNbUnknowns,localNbUnknowns,globalNbUnknowns,globalNbUnknowns,d_nnz,NULL,o_nnz,NULL,&A);
 
     if(rank == 0)
         {
