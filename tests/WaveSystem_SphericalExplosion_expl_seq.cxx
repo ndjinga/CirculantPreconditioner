@@ -52,12 +52,12 @@ void WaveSystem_seq(double tmax, int ntmax, double cfl, int output_freq, const M
         {
             idx = k*nbComp;
             value=pressure_field[k];//vale to add in the vector
-            VecSetValues(Un,1,&idx,&value,INSERT_VALUES);
+            VecSetValues(Un,1,&idx,(PetscScalar*)&value,INSERT_VALUES);
             for(int idim =0; idim<dim; idim++)
             {
                 idx = k*nbComp+1+idim;
                 value =rho0*velocity_field[k,idim];
-                VecSetValues(Un,1,&idx,&value,INSERT_VALUES);
+                VecSetValues(Un,1,&idx,(PetscScalar*)&value,INSERT_VALUES);
             }
         }
 
@@ -103,12 +103,12 @@ void WaveSystem_seq(double tmax, int ntmax, double cfl, int output_freq, const M
             for(int k=0; k<nbCells; k++)
             {
                     idx = k*(dim+1)+0;
-                    VecGetValues(Un,1,&idx,&value);
+                    VecGetValues(Un,1,&idx,(PetscScalar*)&value);
                     pressure_field[k]  =value;
                     for(int idim =0; idim<dim; idim++)
                     {
                         idx = k*nbComp+1+idim;
-                        VecGetValues(Un,1,&idx,&value);
+                        VecGetValues(Un,1,&idx,(PetscScalar*)&value);
                         velocity_field[k,idim] = value/rho0;
                     }
             }

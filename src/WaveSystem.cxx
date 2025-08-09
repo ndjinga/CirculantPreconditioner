@@ -83,7 +83,7 @@ void addValue( int i, int j, Matrix M, Mat * mat )
         {
             I=i+k;
             J=j+l;
-            MatSetValues( *mat,1, &I, 1, &J, &M(k,l), ADD_VALUES);
+            MatSetValues( *mat,1, &I, 1, &J, (PetscScalar*)&M(k,l), ADD_VALUES);
         }
 }
 
