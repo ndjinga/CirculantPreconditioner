@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
 
    // Problem data
     double tmax=0.01;
-    double ntmax=2000000;
+    int ntmax=2000000;
     int freqSortie=100;
     string fileOutPut="SphericalWave";
 
