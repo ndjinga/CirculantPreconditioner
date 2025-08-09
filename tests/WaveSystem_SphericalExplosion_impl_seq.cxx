@@ -26,7 +26,7 @@ void WaveSystem_impl_seq(double tmax, int ntmax, double cfl, int output_freq, co
     Vec Un, dUn;
     Mat A;
     int idx;//Index where to add the vector values
-    double value;//value to add in the vector    
+    PetscScalar value;//value to add in the vector    
     KSP ksp;
     KSPType ksptype=(char*)&KSPGMRES;
     PC pc;
@@ -58,12 +58,12 @@ void WaveSystem_impl_seq(double tmax, int ntmax, double cfl, int output_freq, co
     {
         idx = k*nbComp;
         value=pressure_field[k];//vale to add in the vector
-        VecSetValues(Un,1,&idx,(PetscScalar*)&value,INSERT_VALUES);
+        VecSetValues(Un,1,&idx,&value,INSERT_VALUES);
         for(int idim =0; idim<dim; idim++)
         {
             idx = k*nbComp+1+idim;
             value =rho0*velocity_field[k,idim];
-            VecSetValues(Un,1,&idx,(PetscScalar*)&value,INSERT_VALUES);
+            VecSetValues(Un,1,&idx,&value,INSERT_VALUES);
         }
     }
     VecAssemblyBegin(Un);
@@ -121,19 +121,19 @@ void WaveSystem_impl_seq(double tmax, int ntmax, double cfl, int output_freq, co
             for(int k=0; k<nbCells; k++)
             {
                     idx = k*(dim+1)+0;
-                    VecGetValues(Un,1,&idx,(PetscScalar*)&value);
-                    pressure_field[k]  =value;
+                    VecGetValues(Un,1,&idx,&value);
+                    pressure_field[k]  = PetscRealPart(value);
                     for(int idim =0; idim<dim; idim++)
                     {
                         idx = k*nbComp+1+idim;
-                        VecGetValues(Un,1,&idx,(PetscScalar*)&value);
-                        velocity_field[k,idim] = value/rho0;
+                        VecGetValues(Un,1,&idx,&value);
+                        velocity_field[k,idim] = PetscRealPart(value)/rho0;
                     }
             }
             pressure_field.setTime(time,it);
-            pressure_field.writeVTK("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_pressure",false);
+            pressure_field.writeMED("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_pressure",false);
             velocity_field.setTime(time,it);
-            velocity_field.writeVTK("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_velocity",false);
+            velocity_field.writeMED("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_velocity",false);
  
             KSPGetConvergedReason( ksp,&reason);
             KSPGetIterationNumber( ksp, &PetscIts);

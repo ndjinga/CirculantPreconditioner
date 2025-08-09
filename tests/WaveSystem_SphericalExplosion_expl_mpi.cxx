@@ -33,7 +33,7 @@ void WaveSystem_mpi(double tmax, int ntmax, double cfl, int output_freq, const M
     int dim;
     int nbComp;        
     int idx;//Index where to add the vector values
-    double value;//value to add in the vector    
+    PetscScalar value;//value to add in the vector    
     Field pressure_field, velocity_field;
     std::string meshName;
 
@@ -86,9 +86,9 @@ void WaveSystem_mpi(double tmax, int ntmax, double cfl, int output_freq, const M
     
         cout << "Saving the solution at time t=" << time <<"  on processor 0"<<endl;
         pressure_field.setTime(time,it);
-        pressure_field.writeVTK(resultDirectory+"/WaveSystem"+to_string(dim)+"DUpwind_"+to_string(size)+"Procs_"+meshName+"_pressure");
+        pressure_field.writeMED(resultDirectory+"/WaveSystem"+to_string(dim)+"DUpwind_"+to_string(size)+"Procs_"+meshName+"_pressure");
         velocity_field.setTime(time,it);
-        velocity_field.writeVTK(resultDirectory+"/WaveSystem"+to_string(dim)+"DUpwind_"+to_string(size)+"Procs_"+meshName+"_velocity");
+        velocity_field.writeMED(resultDirectory+"/WaveSystem"+to_string(dim)+"DUpwind_"+to_string(size)+"Procs_"+meshName+"_velocity");
         /* --------------------------------------------- */
     
 
@@ -96,12 +96,12 @@ void WaveSystem_mpi(double tmax, int ntmax, double cfl, int output_freq, const M
         {
             idx = k*nbComp;
             value=pressure_field[k];//vale to add in the vector
-            VecSetValues(Un,1,&idx,(PetscScalar*)&value,INSERT_VALUES);
+            VecSetValues(Un,1,&idx,&value,INSERT_VALUES);
             for(int idim =0; idim<dim; idim++)
             {
                 idx = k*nbComp+1+idim;
                 value =rho0*velocity_field[k,idim];
-                VecSetValues(Un,1,&idx,(PetscScalar*)&value,INSERT_VALUES);
+                VecSetValues(Un,1,&idx,&value,INSERT_VALUES);
             }
         }
         computeDivergenceMatrix(my_mesh,&divMat,dt);
@@ -110,12 +110,8 @@ void WaveSystem_mpi(double tmax, int ntmax, double cfl, int output_freq, const M
     VecAssemblyBegin(Un);
     VecAssemblyEnd(Un);
     
-    //VecView(Un, PETSC_VIEWER_STDOUT_WORLD );
-
     MatAssemblyBegin(divMat, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(  divMat, MAT_FINAL_ASSEMBLY);
-
-    //MatView(divMat,    PETSC_VIEWER_STDOUT_WORLD );
 
     MPI_Bcast(&dt, 1, MPI_DOUBLE, 0, PETSC_COMM_WORLD);
 
@@ -143,19 +139,19 @@ void WaveSystem_mpi(double tmax, int ntmax, double cfl, int output_freq, const M
                 for(int k=0; k<nbCells; k++)
                 {
                     idx = k*(dim+1)+0;
-                    VecGetValues(Un_seq,1,&idx,(PetscScalar*)&value);
-                    pressure_field[k]  =value;
+                    VecGetValues(Un_seq,1,&idx,&value);
+                    pressure_field[k]  = PetscRealPart(value);
                     for(int idim =0; idim<dim; idim++)
                     {
                         idx = k*nbComp+1+idim;
-                        VecGetValues(Un_seq,1,&idx,(PetscScalar*)&value);
-                        velocity_field[k,idim] = value/rho0;
+                        VecGetValues(Un_seq,1,&idx,&value);
+                        velocity_field[k,idim] = PetscRealPart(value)/rho0;
                     }
                 }
                 pressure_field.setTime(time,it);
-                pressure_field.writeVTK(resultDirectory+"/WaveSystem"+to_string(dim)+"DUpwind_"+to_string(size)+"Procs_"+meshName+"_pressure",false);
+                pressure_field.writeMED(resultDirectory+"/WaveSystem"+to_string(dim)+"DUpwind_"+to_string(size)+"Procs_"+meshName+"_pressure",false);
                 velocity_field.setTime(time,it);
-                velocity_field.writeVTK(resultDirectory+"/WaveSystem"+to_string(dim)+"DUpwind_"+to_string(size)+"Procs_"+meshName+"_velocity",false);
+                velocity_field.writeMED(resultDirectory+"/WaveSystem"+to_string(dim)+"DUpwind_"+to_string(size)+"Procs_"+meshName+"_velocity",false);
             }
         }
     }

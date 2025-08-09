@@ -78,12 +78,14 @@ void initial_conditions_shock(Mesh my_mesh,Field& pressure_field,Field& velocity
 void addValue( int i, int j, Matrix M, Mat * mat )
 {
     int I,J;
+    PetscScalar coeff;
     for (int k=0; k<M.getNumberOfRows(); k++)
         for (int l=0; l<M.getNumberOfColumns(); l++)
         {
             I=i+k;
             J=j+l;
-            MatSetValues( *mat,1, &I, 1, &J, (PetscScalar*)&M(k,l), ADD_VALUES);
+            coeff=M(k,l);
+            MatSetValues( *mat,1, &I, 1, &J, &coeff, ADD_VALUES);
         }
 }
 

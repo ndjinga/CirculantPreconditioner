@@ -27,7 +27,7 @@ void WaveSystem_seq(double tmax, int ntmax, double cfl, int output_freq, const M
     Vec Un, dUn;
     Mat divMat;
     int idx;//Index where to add the vector values
-    double value;//value to add in the vector    
+    PetscScalar value;//value to add in the vector    
 
 
     globalNbUnknowns=nbCells*nbComp;
@@ -48,18 +48,20 @@ void WaveSystem_seq(double tmax, int ntmax, double cfl, int output_freq, const M
     VecCreateMPI(PETSC_COMM_WORLD,PETSC_DECIDE    ,globalNbUnknowns,&Un);
     VecDuplicate (Un,&dUn);
     
-        for(int k =0; k<nbCells; k++)
-        {
-            idx = k*nbComp;
-            value=pressure_field[k];//vale to add in the vector
-            VecSetValues(Un,1,&idx,(PetscScalar*)&value,INSERT_VALUES);
-            for(int idim =0; idim<dim; idim++)
-            {
-                idx = k*nbComp+1+idim;
-                value =rho0*velocity_field[k,idim];
-                VecSetValues(Un,1,&idx,(PetscScalar*)&value,INSERT_VALUES);
-            }
-        }
+	for(int k =0; k<nbCells; k++)
+	{
+		idx = k*nbComp;
+		value=pressure_field[k];//vale to add in the vector
+		VecSetValues(Un,1,&idx,&value,INSERT_VALUES);
+		for(int idim =0; idim<dim; idim++)
+		{
+			idx = k*nbComp+1+idim;
+			value =rho0*velocity_field[k,idim];
+			VecSetValues(Un,1,&idx,&value,INSERT_VALUES);
+		}
+	}
+    VecAssemblyBegin(Un);
+    VecAssemblyEnd(Un);
 
     /*
      * MED/VTK output of the initial condition at t=0 and iter = 0
@@ -71,17 +73,15 @@ void WaveSystem_seq(double tmax, int ntmax, double cfl, int output_freq, const M
     
     cout << "Saving the solution at time t=" << time << endl;
     pressure_field.setTime(time,it);
-    pressure_field.writeVTK("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_pressure");
+    pressure_field.writeMED("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_pressure");
     velocity_field.setTime(time,it);
-    velocity_field.writeVTK("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_velocity");
+    velocity_field.writeMED("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_velocity");
     /* --------------------------------------------- */
 
     computeDivergenceMatrix(my_mesh,&divMat,dt);
 
     MatAssemblyBegin(divMat, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(  divMat, MAT_FINAL_ASSEMBLY);
-    VecAssemblyBegin(Un);
-    VecAssemblyEnd(Un);
 
     /* Time loop */
     cout<< "Starting computation of the linear wave system with an explicit UPWIND scheme" << endl;
@@ -103,19 +103,19 @@ void WaveSystem_seq(double tmax, int ntmax, double cfl, int output_freq, const M
             for(int k=0; k<nbCells; k++)
             {
                     idx = k*(dim+1)+0;
-                    VecGetValues(Un,1,&idx,(PetscScalar*)&value);
-                    pressure_field[k]  =value;
+                    VecGetValues(Un,1,&idx,&value);
+                    pressure_field[k]  = PetscRealPart(value);
                     for(int idim =0; idim<dim; idim++)
                     {
                         idx = k*nbComp+1+idim;
-                        VecGetValues(Un,1,&idx,(PetscScalar*)&value);
-                        velocity_field[k,idim] = value/rho0;
+                        VecGetValues(Un,1,&idx,&value);
+                        velocity_field[k,idim] = PetscRealPart(value)/rho0;
                     }
             }
             pressure_field.setTime(time,it);
-            pressure_field.writeVTK("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_pressure",false);
+            pressure_field.writeMED("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_pressure",false);
             velocity_field.setTime(time,it);
-            velocity_field.writeVTK("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_velocity",false);
+            velocity_field.writeMED("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_velocity",false);
         }
     }
     cout<<"End of calculation -- Iteration: " << it << ", time: "<< time<< ", dt: " << dt<<endl;
