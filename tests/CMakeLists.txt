@@ -48,7 +48,10 @@ message(STATUS ${MY_HEADERS})
  )
 
 if( CirculantPreconditioner_WITH_MPI )
- add_test(NAME testWaveSystem_SphericalExplosion_expl_mpi_2D_SQUARE_squares_2procs  COMMAND "${MPIEXEC}" "-n" "2" "./WaveSystem_SphericalExplosion_expl_mpi" )#Default is cartesian mesh
+ target_link_libraries(WaveSystem_SphericalExplosion_expl_mpi                       ${MPI_HOME}/lib/libmpi.so)
+ target_link_libraries(WaveSystem_SphericalExplosion_impl_mpi                       ${MPI_HOME}/lib/libmpi.so)
+
+add_test(NAME testWaveSystem_SphericalExplosion_expl_mpi_2D_SQUARE_squares_2procs  COMMAND "${MPIEXEC}" "-n" "2" "./WaveSystem_SphericalExplosion_expl_mpi" )#Default is cartesian mesh
  add_test(NAME testWaveSystem_SphericalExplosion_expl_mpi_2D_SQUARE_squares_4procs  COMMAND "${MPIEXEC}" "-n" "4" "./WaveSystem_SphericalExplosion_expl_mpi" )#Default is cartesian mesh
  add_test(NAME testWaveSystem_SphericalExplosion_expl_mpi_3D_CUBE_tetras_2procs     COMMAND "${MPIEXEC}" "-n" "2" "./WaveSystem_SphericalExplosion_expl_mpi" "${PROJECT_SOURCE_DIR}/../meshes/meshCube.med")     
  add_test(NAME testWaveSystem_SphericalExplosion_expl_mpi_3D_CUBE_tetras_4procs     COMMAND "${MPIEXEC}" "-n" "4" "./WaveSystem_SphericalExplosion_expl_mpi" "${PROJECT_SOURCE_DIR}/../meshes/meshCube.med")     
