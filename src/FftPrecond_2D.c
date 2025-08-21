@@ -291,6 +291,7 @@ PetscErrorCode test_2D() {
 
     Vec r;// residual vector r=AX-b
     PetscReal rnorm, enorm;// residual norm and error
+    PetscReal X_ref_norm, b_norm;
 
     // Initialize FFT 2D
     PetscInt ndim = 2;
@@ -318,6 +319,7 @@ PetscErrorCode test_2D() {
     solve_2D(FFT_MAT, X, Diag, b, b_hat);
 
     // Compute relative Residual
+    VecNorm(b, NORM_2, &b_norm);
     PetscCall(MatCreateVecs( C, NULL, &r));
 #if defined(PETSC_USE_COMPLEX)
     MatMult(C, X, r); // r=Ax
@@ -332,9 +334,10 @@ PetscErrorCode test_2D() {
     VecAXPY(r, -1, b_short); // r=Ax-b
 #endif
     VecNorm(r, NORM_2, &rnorm);
-    PetscPrintf(PETSC_COMM_WORLD, "Relative residual = %e\n", rnorm);
+    PetscPrintf(PETSC_COMM_WORLD, "Relative residual = %e\n", rnorm / b_norm);
 
     // Compute relative error
+    VecNorm(X_ref, NORM_2, &X_ref_norm);
 #if defined(PETSC_USE_COMPLEX)
     VecAXPY(X_ref, -1, X); // X_ref -= X
 #else
@@ -345,7 +348,7 @@ PetscErrorCode test_2D() {
     VecAXPY(X_ref, -1, x_short);
 #endif
     VecNorm(X_ref, NORM_2, &enorm);
-    PetscPrintf(PETSC_COMM_WORLD, "Relative error = %e\n", enorm);
+    PetscPrintf(PETSC_COMM_WORLD, "Relative error = %e\n", enorm / X_ref_norm);
 
     // Clean up
     PetscCall(VecDestroy(&b));
