@@ -24,20 +24,32 @@ def build_C_3D(n_x, n_y, n_z, lmbda_x, lmbda_y, lmbda_z):
     return C
 
 def build_diag_mat_vec_3D(n_x, n_y, n_z, lmbda_x, lmbda_y, lmbda_z):
-    return
+    c_nx = build_circulant_col(n_x)
+    c_ny = build_circulant_col(n_y)
+    c_nz = build_circulant_col(n_z)
 
-def vectorized_fftn(v, n_x, n_y):
-    v = v.reshape((n_y, n_x))
+    c_nx_hat = fft(c_nx)
+    c_ny_hat = fft(c_ny)
+    c_nz_hat = fft(c_nz)
+
+    Diag = 1 + lmbda_x * np.tile(c_nx_hat, n_y * n_z) + lmbda_y * np.repeat(np.tile(c_ny_hat, n_z), n_x) + lmbda_z * np.repeat(c_nz_hat, n_x * n_y)
+    return Diag
+
+def vectorized_fftn(v, n_x, n_y, n_z):
+    v = v.reshape((n_z, n_y, n_x))
     v_hat = fftn(v)
     return v_hat.flatten()
 
-def vectorized_ifftn(v, n_x, n_y):
-    v = v.reshape((n_y, n_x))
+def vectorized_ifftn(v, n_x, n_y, n_z):
+    v = v.reshape((n_z, n_y, n_x))
     v_hat = ifftn(v)
     return v_hat.flatten()
 
 def solve_circulant_system_3D(Diag, b, n_x, n_y, n_z):
-    return
+    b_hat = vectorized_fftn(b, n_x, n_y, n_z)
+    x_hat = b_hat / Diag
+    X = vectorized_ifftn(x_hat, n_x, n_y, n_z)
+    return X
 
 def test_fft_precond_3D(n_x=5, n_y=5, n_z=5, a_x=1, a_y=1, a_z=1, delta_t=0.01, delta_x=0.1, delta_y=0.1, delta_z=0.1, seed=123):
     # Matrice circulante par bloc
@@ -45,7 +57,6 @@ def test_fft_precond_3D(n_x=5, n_y=5, n_z=5, a_x=1, a_y=1, a_z=1, delta_t=0.01, 
     lmbda_y = a_y * delta_t / delta_y
     lmbda_z = a_z * delta_t / delta_z
     C = build_C_3D(n_x, n_y, n_z, lmbda_x, lmbda_y, lmbda_z)
-    print(C)
 
     # Génerer un X random qui sera le même à chaque execution
     rng = np.random.default_rng(seed)
@@ -53,31 +64,30 @@ def test_fft_precond_3D(n_x=5, n_y=5, n_z=5, a_x=1, a_y=1, a_z=1, delta_t=0.01, 
     b = C @ X_ref.flatten()
 
     # Matrice diagonale
-    # Diag = build_diag_mat_vec_3D(n_x, n_y, lmbda_x, lmbda_y)
-    
+    Diag = build_diag_mat_vec_3D(n_x, n_y, n_z, lmbda_x, lmbda_y, lmbda_z)
+
     # Résolution
-    # X = solve_circulant_system_3D(Diag, b, n_x, n_y)
+    X = solve_circulant_system_3D(Diag, b, n_x, n_y, n_z)
 
     # Vérification
-    # error_rel = np.linalg.norm(X_ref - X.reshape(n_x, n_y)) / np.linalg.norm(X_ref)
-    # residual_rel = np.linalg.norm(C @ X.flatten() - b) / np.linalg.norm(b)
-    # print("error_rel     =", error_rel)
-    # print("residual_rel  =", residual_rel)
+    error_rel = np.linalg.norm(X_ref - X.reshape(n_x, n_y, n_z)) / np.linalg.norm(X_ref)
+    residual_rel = np.linalg.norm(C @ X.flatten() - b) / np.linalg.norm(b)
+    print("Relative error     =", error_rel)
+    print("Relative residual  =", residual_rel)
     # print("X_ref =\n", X_ref)
     # print("X =\n", X.reshape(size, size))
-    # print("X_ref - X =\n", X_ref - X.reshape(size, size))
+    # print("X_ref - X =\n", X_ref - X.reshape(n_x, n_y, n_z))
 
 
-size=100
-n_x=5
-n_y=2
-n_z=3
-a_x=30
+n_x=10
+n_y=25
+n_z=40
+a_x=6
 a_y=3
 a_z=1
 delta_t=0.01
 delta_x=0.1
-delta_y=0.1
-delta_z=0.1
+delta_y=0.2
+delta_z=0.5
 
 test_fft_precond_3D(n_x=n_x, n_y=n_y, n_z=n_z, a_x=a_x, a_y=a_y, a_z=a_z, delta_t=delta_t, delta_x=delta_x, delta_y=delta_y, delta_z=delta_z)

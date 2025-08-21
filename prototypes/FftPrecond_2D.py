@@ -72,14 +72,13 @@ def test_fft_precond_2D(n_x=5, n_y=5, a_x=1, a_y=1, delta_t=0.01, delta_x=0.1, d
     # Vérification
     error_rel = np.linalg.norm(X_ref - X.reshape(n_x, n_y)) / np.linalg.norm(X_ref)
     residual_rel = np.linalg.norm(C @ X.flatten() - b) / np.linalg.norm(b)
-    print("error_rel     =", error_rel)
-    print("residual_rel  =", residual_rel)
+    print("Relative error     =", error_rel)
+    print("Relative residual  =", residual_rel)
     # print("X_ref =\n", X_ref)
     # print("X =\n", X.reshape(size, size))
     # print("X_ref - X =\n", X_ref - X.reshape(size, size))
 
 
-size=100
 n_x=50
 n_y=200
 a_x=30
