@@ -1,6 +1,80 @@
 #include <petscmat.h>
 #include <petscvec.h>
 
+/* The function VecPointwiseDivideForRealFFT should be compiled only when petsc was buil with real numbers (not complex numbers) */
+#if !defined(PETSC_USE_COMPLEX)
+PetscErrorCode buildComplexRatio( PetscInt i, Vec v2, Vec v3, PetscReal* z1r, PetscReal* z1i) {
+    PetscFunctionBeginUser;
+    PetscInt idx;
+    PetscReal   z2r, z3r, z2i, z3i, z3_2;
+
+    idx = i;
+    VecGetValues(v2,1,&idx,&z2r);
+    VecGetValues(v3,1,&idx,&z3r);
+    idx = i+1;
+    VecGetValues(v2,1,&idx,&z2i);
+    VecGetValues(v3,1,&idx,&z3i);
+
+    z3_2 = z3r*z3r + z3i*z3i;
+    *z1r = (z2r*z3r + z2i*z3i)/z3_2;
+    *z1i = (z2i*z3r - z2r*z3i)/z3_2;
+    
+    PetscFunctionReturn(PETSC_SUCCESS);
+}
+
+PetscErrorCode VecPointwiseDivideForRealFFT( Vec v1, Vec v2, Vec v3) {
+    PetscFunctionBeginUser;
+    PetscErrorCode ierr = PETSC_ERR_ARG_WRONG;
+    PetscLayout map1, map2, map3;
+    PetscBool v1v2Compatible, v2v3Compatible;
+    PetscInt row_min, row_max, size, idx, istart, iend;
+    PetscReal    z1r, z1i;
+    
+    PetscCall(VecGetLayout(v1,&map1));
+    PetscCall(VecGetLayout(v2,&map2));
+    PetscCall(VecGetLayout(v3,&map3));
+    
+    PetscCall(PetscLayoutCompare( map1, map2, &v1v2Compatible));
+    PetscCall(PetscLayoutCompare( map2, map3, &v2v3Compatible));
+    
+    PetscCheck( v2v3Compatible, PETSC_COMM_WORLD, ierr, "!!!!!! Input vectors v2 and v3 should have the same size and parallel distribution !");
+    PetscCheck( v1v2Compatible, PETSC_COMM_WORLD, ierr, "!!!!!! Input v1 and output v2 vectors should have the same size and parallel distribution !");
+
+    PetscCall(VecGetSize(v1,&size));
+    PetscCheck( size%2==0,   PETSC_COMM_WORLD, ierr, "!!!!!! Vector sizes should be even !");
+    
+    PetscCall(VecGetOwnershipRange(v2, &row_min, &row_max));
+    
+    //if irow_min and irow_max are even, no communication is involved
+    istart = 2*((row_min+1)/2);//smallest even integer above row_min
+    iend   = 2*( row_max  /2);//largest  even integer below row_max
+
+    for( PetscInt i = istart ; i < iend && i < 2*(size/4+1) ; i+=2)//loop with no communication involved, size/4+1 complex numbers are stored in the real fft vector
+    {
+        buildComplexRatio( i, v2, v3, &z1r, &z1i);//computes z2/z3
+        idx = i;
+        VecSetValues(v1,1,&idx,&z1r,INSERT_VALUES);
+        idx = i+1;
+        VecSetValues(v1,1,&idx,&z1i,INSERT_VALUES);
+    }
+    //Now deal with communications between procs if row_min or row_max is odd
+    if( row_min < istart  && row_min-1 < 2*(size/4+1) )//row_min is odd, need real part located at irow_min-1 on another proc
+    {
+        buildComplexRatio( row_min-1, v2, v3, &z1r, &z1i);//computes z2/z3
+        idx = row_min;
+        VecSetValues(v1,1,&idx,&z1i,INSERT_VALUES);        
+    }
+    if( row_max > iend  && row_max-1 < 2*(size/4+1) )//row_max is odd, need imaginary part located at irow_max on another proc
+    {
+        buildComplexRatio( row_max-1, v2, v3, &z1r, &z1i);//computes z2/z3
+        idx = row_max-1;
+        VecSetValues(v1,1,&idx,&z1r,INSERT_VALUES);
+    }
+    
+    PetscFunctionReturn(PETSC_SUCCESS);
+}
+#endif
+
 PetscErrorCode build_circulant_col_1D(Vec c, PetscInt size) {
     PetscFunctionBeginUser;
     VecSet(c, 0.0);
@@ -21,7 +95,7 @@ PetscErrorCode build_circulant_mat_1D( Mat C, PetscInt size, PetscScalar c1, Pet
     PetscFunctionReturn(PETSC_SUCCESS);
 }
 
-PetscErrorCode create_identity_matrix(Mat Id, int n) {
+PetscErrorCode build_identity_matrix(Mat Id, int n) {
     PetscFunctionBeginUser;
 
     for (PetscInt i = 0; i < n; ++i) {
@@ -47,13 +121,13 @@ PetscErrorCode build_C_2D(Mat *C, PetscInt n_x, PetscInt n_y, PetscScalar lambda
     PetscCall(build_circulant_mat_1D(Cx_ny, n_y, 1.0, -1));
 
     PetscCall(MatCreateAIJ(PETSC_COMM_WORLD, n_x, n_x, n_x, n_x, 2, NULL, 1, NULL, &Id_nx));
-    PetscCall(create_identity_matrix(Id_nx, n_x));
+    PetscCall(build_identity_matrix(Id_nx, n_x));
 
     PetscCall(MatCreateAIJ(PETSC_COMM_WORLD, n_y, n_y, n_y, n_y, 2, NULL, 1, NULL, &Id_ny));
-    PetscCall(create_identity_matrix(Id_ny, n_y));
+    PetscCall(build_identity_matrix(Id_ny, n_y));
 
     PetscCall(MatCreateAIJ(PETSC_COMM_WORLD, n_x * n_y, n_x * n_y, n_x * n_y, n_x * n_y, 2, NULL, 1, NULL, &Id_nx_ny));
-    PetscCall(create_identity_matrix(Id_nx_ny, n_x * n_y));
+    PetscCall(build_identity_matrix(Id_nx_ny, n_x * n_y));
 
     PetscCall(MatSeqAIJKron(Id_ny, Cx_nx, MAT_INITIAL_MATRIX, &Cx_nx_ny));
     PetscCall(MatSeqAIJKron(Cx_ny, Id_nx, MAT_INITIAL_MATRIX, &Cy_nx_ny));
@@ -166,63 +240,129 @@ PetscErrorCode build_diag_mat_vec_2D(Vec c, PetscInt n_x, PetscInt n_y, PetscSca
     PetscFunctionReturn(PETSC_SUCCESS);
 }
 
-PetscErrorCode test_2D_2(int argc, char **argv) {
-    PetscInitialize(&argc, &argv, NULL, NULL);
-    Mat C;
-    PetscInt n_x = 3, n_y = 3;
-    PetscScalar lambda_x = 1, lambda_y = 1;
-    PetscCall(MatCreateAIJ(PETSC_COMM_WORLD, n_x * n_y, n_x * n_y, n_x * n_y, n_x * n_y, 2, NULL, 1, NULL, &C));
-    PetscCall(build_C_2D(&C, n_x, n_y, lambda_x, lambda_y));
-    PetscCall(MatView(C, PETSC_VIEWER_STDOUT_WORLD));
-    PetscCall(PetscFinalize());
-    return 0;
+PetscErrorCode solve_2D(Mat FFT_MAT, Vec X, Vec Diag, Vec b, Vec b_hat) {
+    PetscFunctionBeginUser;
+    PetscInt size;
+
+    // FFT
+    PetscCall(MatMult(FFT_MAT, b, b_hat));
+
+    // b_hat / Diag
+#if defined(PETSC_USE_COMPLEX)
+    PetscCall(VecPointwiseDivide(b_hat, b_hat, Diag));
+#else
+    PetscCall(VecPointwiseDivideForRealFFT(b_hat, b_hat, Diag));
+#endif
+
+    // IFFT
+    PetscCall(MatMultTranspose(FFT_MAT, b_hat, X));
+
+    // Normalize
+    PetscCall(VecGetSize(X, &size));
+#if defined(PETSC_USE_COMPLEX)
+    VecScale(X,1./size);
+#else
+    VecScale(X,2./size);
+#endif
+
+    PetscFunctionReturn(PETSC_SUCCESS);
 }
 
-PetscErrorCode test_2D(int argc, char **argv) {
+PetscErrorCode test_2D() {
+    PetscFunctionBeginUser;
+
+    // Input parameters
     PetscInt n_x = 3;
-    PetscInt n_y = 3;
-    PetscScalar lambda_x = 1;
-    PetscScalar lambda_y = 1;
-    Vec c, b;// input vectors of forward fft
-    Vec lambdas, b_hat;// output vectors of forward fft = input vectors of backward fft
-    Vec x;// output vectors of backward fft
-    //Vec r;// residual vector r=AX-b
-    //PetscReal rnorm;// residual norm
-    Mat FFT_MAT;//, C;
-    PetscInt ndim = 1;
-    PetscInt dims[1];
+    PetscInt n_y = 2;
+    PetscScalar a_x = 1;
+    PetscScalar a_y = 1;
+    PetscScalar dt = 1;
+    PetscScalar delta_x = 1;
+    PetscScalar delta_y = 1;
+    PetscScalar lambda_x = a_x * dt / delta_x;
+    PetscScalar lambda_y = a_y * dt / delta_y;
 
-    PetscCall(PetscInitialize(&argc, &argv, NULL, NULL));
+    // Variables
+    Mat C; // Block-circulant matrix
+    Vec X_ref, X, b; // CX=b
+    Mat FFT_MAT;
+    Vec b_hat; // fft of b
+    Vec Diag; // vector of the diagonal matrix
 
-    dims[0] = n_x * n_y;
+    Vec r;// residual vector r=AX-b
+    PetscReal rnorm, enorm;// residual norm and error
+
+    // Initialize FFT 2D
+    PetscInt ndim = 2;
+    PetscInt dims[2] = {n_y, n_x};
     PetscCall(MatCreateFFT(PETSC_COMM_WORLD, ndim, dims, MATFFTW, &FFT_MAT));
     
-    PetscCall(MatCreateVecsFFTW( FFT_MAT, &c, &lambdas, &x));
-    PetscCall(MatCreateVecsFFTW( FFT_MAT, &b, &b_hat  , NULL));
+    // Initialize vectors
+    PetscCall(MatCreateVecsFFTW( FFT_MAT, NULL, &Diag, &X_ref));
+    PetscCall(MatCreateVecsFFTW( FFT_MAT, &b, &b_hat  , &X));
 
-    build_diag_mat_vec_2D(c, n_x, n_y, lambda_x, lambda_y);
-    PetscCall(VecView(c, PETSC_VIEWER_STDOUT_WORLD));
-
+    // Build the block-circulant matrix C
+    PetscCall(MatCreateAIJ(PETSC_COMM_WORLD, n_x * n_y, n_x * n_y, n_x * n_y, n_x * n_y, 2, NULL, 1, NULL, &C));
+    PetscCall(build_C_2D(&C, n_x, n_y, lambda_x, lambda_y));
+    
+    // Build the reference vector X_ref and b
     for (PetscInt i = 0; i < n_x * n_y; i++) 
-        VecSetValue( b, i, i*i*i, INSERT_VALUES);
+        VecSetValue( X_ref, i, i*i*i, INSERT_VALUES);
+    VecAssemblyBegin(X_ref);
+    VecAssemblyEnd(X_ref);
 
-    VecAssemblyBegin(b);
-    VecAssemblyEnd(b);
+    PetscCall(MatMult(C, X_ref, b));
 
-    //PetscCall(solve_circulant_system_2D(FFT_MAT, c, b, x, lambdas, b_hat));
+    // Solve the system
+    build_diag_mat_vec_2D(Diag, n_x, n_y, lambda_x, lambda_y);
+    solve_2D(FFT_MAT, X, Diag, b, b_hat);
+
+    // Compute relative Residual
+    PetscCall(MatCreateVecs( C, NULL, &r));
+#if defined(PETSC_USE_COMPLEX)
+    MatMult(C, X, r); // r=Ax
+    VecAXPY(r, -1, b); // r=Ax-b
+#else
+    Vec x_short, b_short;
+    IS is;
+   	ISCreateStride(PETSC_COMM_WORLD, N, 0, 1, &is);
+    VecGetSubVector(X, is, &x_short);
+    VecGetSubVector(b, is, &b_short);
+    MatMult(C, x_short, r); // r=Ax
+    VecAXPY(r, -1, b_short); // r=Ax-b
+#endif
+    VecNorm(r, NORM_2, &rnorm);
+    PetscPrintf(PETSC_COMM_WORLD, "Relative residual = %e\n", rnorm);
+
+    // Compute relative error
+#if defined(PETSC_USE_COMPLEX)
+    VecAXPY(X_ref, -1, X); // X_ref -= X
+#else
+    Vec x_short;
+    IS is;
+   	ISCreateStride(PETSC_COMM_WORLD, N, 0, 1, &is);
+    VecGetSubVector(X, is, &x_short);
+    VecAXPY(X_ref, -1, x_short);
+#endif
+    VecNorm(X_ref, NORM_2, &enorm);
+    PetscPrintf(PETSC_COMM_WORLD, "Relative error = %e\n", enorm);
 
     // Clean up
     PetscCall(VecDestroy(&b));
-    PetscCall(VecDestroy(&x));
-    PetscCall(VecDestroy(&c));
-    PetscCall(VecDestroy(&lambdas));
+    PetscCall(VecDestroy(&X));
+    PetscCall(VecDestroy(&X_ref));
     PetscCall(VecDestroy(&b_hat));
+    PetscCall(VecDestroy(&Diag));
+    PetscCall(VecDestroy(&r));
     PetscCall(MatDestroy(&FFT_MAT));
-    PetscCall(PetscFinalize());
-    return 0;
+    PetscCall(MatDestroy(&C));
+
+    PetscFunctionReturn(PETSC_SUCCESS);
 }
 
 int main(int argc, char **argv) {
-    test_2D(argc, argv);
+    PetscCall(PetscInitialize(&argc, &argv, NULL, NULL));
+    test_2D();
+    PetscCall(PetscFinalize());
     return 0;
 }
