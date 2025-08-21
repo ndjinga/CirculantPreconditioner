@@ -1,6 +1,6 @@
-# CirculantPreconditioner_SRC
+# FFTPreconditioner
 
-This project provides tools and scripts for testing and analyzing simulation on general meshes based on circulant matrix preconditoiners.
+This project provides tools and scripts for testing and analyzing simulation on general meshes with preconditioners based on Fast Fourier Transform.
 
 The main prerequisites are PETSc for the handling of matrices and MEDCoupling for the handling of meshes (structured and unstructured).
 PETSc should be compiled with the external library FFTW in order to allow the efficient manipulation of circulant matrices. Indeed the product of a circulant matrix by a vector can be accelerated with the use of the FFT algorithm.  
@@ -13,9 +13,9 @@ After cloning, the typical installation is done via the commands
 'cmake /path/to/SOURCE/DIR \
     -DCMAKE_INSTALL_PREFIX=/path/to/INSTALL/DIR \
     -DCMAKE_BUILD_TYPE=Release \
-    -DCirculantPreconditioner_WITH_PYTHON=ON \
-    -DCirculantPreconditioner_WITH_TESTS=ON \
-    -DCirculantPreconditioner_WITH_MPI=ON \
+    -DFFTPreconditioner_WITH_PYTHON=ON \
+    -DFFTPreconditioner_WITH_TESTS=ON \
+    -DFFTPreconditioner_WITH_MPI=ON \
     -DPETSC_DIR=/path/to/PETSC/DIR \
     -DPETSC_ARCH=arch-linux-c-opt \
     -DSOLVERLAB_DIR=/volatile/catA/ndjinga/Logiciels/Solverlab/INSTALL_mpi \
