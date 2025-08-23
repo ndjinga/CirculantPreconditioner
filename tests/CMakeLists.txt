@@ -21,10 +21,10 @@ message(STATUS ${MY_HEADERS})
  target_include_directories(WaveSystem_SphericalExplosion_expl_mpi                 PRIVATE ${PETSC_INCLUDES} ${SOLVERLAB_INCLUDES}   ${MY_HEADERS})
  target_include_directories(WaveSystem_SphericalExplosion_impl_seq                 PRIVATE ${PETSC_INCLUDES} ${SOLVERLAB_INCLUDES}   ${MY_HEADERS})
  target_include_directories(WaveSystem_SphericalExplosion_impl_mpi                 PRIVATE ${PETSC_INCLUDES} ${SOLVERLAB_INCLUDES}   ${MY_HEADERS})
- target_link_libraries(WaveSystem_SphericalExplosion_expl_seq                       ${PETSC_LIBRARIES} ${SOLVERLAB_LIBS} CirculantPreconditionerLib )
- target_link_libraries(WaveSystem_SphericalExplosion_expl_mpi                       ${PETSC_LIBRARIES} ${SOLVERLAB_LIBS} CirculantPreconditionerLib )
- target_link_libraries(WaveSystem_SphericalExplosion_impl_seq                       ${PETSC_LIBRARIES} ${SOLVERLAB_LIBS} CirculantPreconditionerLib )
- target_link_libraries(WaveSystem_SphericalExplosion_impl_mpi                       ${PETSC_LIBRARIES} ${SOLVERLAB_LIBS} CirculantPreconditionerLib )
+ target_link_libraries(WaveSystem_SphericalExplosion_expl_seq                       ${PETSC_LIBRARIES} ${SOLVERLAB_LIBS} FFTPreconditionerLib )
+ target_link_libraries(WaveSystem_SphericalExplosion_expl_mpi                       ${PETSC_LIBRARIES} ${SOLVERLAB_LIBS} FFTPreconditionerLib )
+ target_link_libraries(WaveSystem_SphericalExplosion_impl_seq                       ${PETSC_LIBRARIES} ${SOLVERLAB_LIBS} FFTPreconditionerLib )
+ target_link_libraries(WaveSystem_SphericalExplosion_impl_mpi                       ${PETSC_LIBRARIES} ${SOLVERLAB_LIBS} FFTPreconditionerLib )
 
  add_test(NAME testWaveSystem_SphericalExplosion_expl_seq_2D_SQUARE_squares         COMMAND "./WaveSystem_SphericalExplosion_expl_seq"  )#Default is cartesian mesh 
  add_test(NAME testWaveSystem_SphericalExplosion_expl_seq_3D_CUBE_tetras            COMMAND "./WaveSystem_SphericalExplosion_expl_seq" "${PROJECT_SOURCE_DIR}/../meshes/meshCube.med")     
@@ -47,7 +47,7 @@ message(STATUS ${MY_HEADERS})
  PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${SOLVERLAB_DIR}/lib:${MEDCOUPLING_DIR}/lib:${MEDFILE_DIR}/lib"
  )
 
-if( CirculantPreconditioner_WITH_MPI )
+if( FFTPreconditioner_WITH_MPI )
  target_link_libraries(WaveSystem_SphericalExplosion_expl_mpi                       ${MPI_HOME}/lib/libmpi.so)
  target_link_libraries(WaveSystem_SphericalExplosion_impl_mpi                       ${MPI_HOME}/lib/libmpi.so)
 
@@ -71,7 +71,7 @@ add_test(NAME testWaveSystem_SphericalExplosion_expl_mpi_2D_SQUARE_squares_2proc
  testWaveSystem_SphericalExplosion_impl_mpi_3D_CUBE_tetras_4procs
  PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${SOLVERLAB_DIR}/lib:${MEDCOUPLING_DIR}/lib:${MEDFILE_DIR}/lib"
  )
-endif( CirculantPreconditioner_WITH_MPI )
+endif( FFTPreconditioner_WITH_MPI )
 
  install(TARGETS WaveSystem_SphericalExplosion_expl_seq DESTINATION tests)
  install(TARGETS WaveSystem_SphericalExplosion_expl_mpi DESTINATION tests)

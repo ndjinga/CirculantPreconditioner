@@ -3,7 +3,7 @@
 This project provides tools and scripts for testing and analyzing simulation on general meshes with preconditioners based on Fast Fourier Transform.
 
 The main prerequisites are PETSc for the handling of matrices and MEDCoupling for the handling of meshes (structured and unstructured).
-PETSc should be compiled with the external library FFTW in order to allow the efficient manipulation of circulant matrices. Indeed the product of a circulant matrix by a vector can be accelerated with the use of the FFT algorithm.  
+PETSc should be compiled with the external library FFTW in order to allow the efficient manipulation of circulant and block circulant matrices. Solving a linear system based on a circulant matrix can be accelerated with the use of the FFT algorithm.  
 
 For the moment SOLVERLAB is mandatory but we hope to remove this dependency soon  
 
