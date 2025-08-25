@@ -20,6 +20,13 @@ void TransportEquationFFT_impl_mpi(double tmax, int ntmax, double cfl, int outpu
     double dt;
     double norm;
 
+    /* Collect mesh data */
+    int nx = my_mesh.getNx();
+    int ny = my_mesh.getNy();
+    int nz = my_mesh.getNz();
+    double delta_x = ( my_mesh.getXMax() - my_mesh.getXMin() )/nx;
+    double delta_y = ( my_mesh.getYMax() - my_mesh.getYMin() )/ny;
+    double delta_z = ( my_mesh.getZMax() - my_mesh.getZMin() )/nz;
         
     /* PETSc variables */
     int globalNbUnknowns;
