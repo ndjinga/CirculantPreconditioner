@@ -191,7 +191,7 @@ int main(int argc, char **argv) {
 #else
     Vec x_short, b_short;
     IS is;
-   	ISCreateStride(PETSC_COMM_WORLD, N, 0, 1, &is);
+    ISCreateStride(PETSC_COMM_WORLD, N, 0, 1, &is);
     VecGetSubVector(x, is, &x_short);
     VecGetSubVector(b, is, &b_short);
     MatMult(C, x_short, r);//r=Ax
