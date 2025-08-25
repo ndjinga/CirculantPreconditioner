@@ -113,22 +113,20 @@ void computeDivergenceMatrix(Mesh my_mesh, Mat * implMat, double dt, Vector vite
             }
             else 
             {    
-                if( Fk.getGroupName() == "Periodic")//Periodic boundary condition
-                {
+                /* for the moment we use Neumann BC so do nothing 
+                if(Fk.getGroupName() != "Neumann")//Nothing to do for Neumann boundary condition
+                {// Apply periodic boundary condition
                     int indexFP=my_mesh.getIndexFacePeriodic(indexFace);
+                    cout<<"face number " << indexFace << " twin found : "<< indexFP <<endl;
                     Face Fp = my_mesh.getFace(indexFP);
                     cellAutre = Fp.getCellsId()[0];
                     
-				if(un>0)
-					MatSetValue(*implMat,j,j        , dt*Fk.getMeasure()/Cj.getMeasure()*un, ADD_VALUES);
-				else
-					MatSetValue(*implMat,j,cellAutre,-dt*Fk.getMeasure()/Cj.getMeasure()*un, ADD_VALUES);
+                    if(un>0)
+                        MatSetValue(*implMat,j,j        , dt*Fk.getMeasure()/Cj.getMeasure()*un, ADD_VALUES);
+                    else
+                        MatSetValue(*implMat,j,cellAutre,-dt*Fk.getMeasure()/Cj.getMeasure()*un, ADD_VALUES);
                 }
-                else if(Fk.getGroupName() != "Neumann")//Nothing to do for Neumann boundary condition
-                {
-                    cout<< Fk.getGroupName() <<endl;
-                    throw CdmathException("computeDivergenceMatrix: Unknown boundary condition name");
-                }
+                */
             }
         }   
     }     
