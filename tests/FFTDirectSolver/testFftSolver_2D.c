@@ -327,7 +327,7 @@ PetscErrorCode test_2D() {
 #else
     Vec x_short, b_short;
     IS is;
-   	ISCreateStride(PETSC_COMM_WORLD, N, 0, 1, &is);
+    ISCreateStride(PETSC_COMM_WORLD, N, 0, 1, &is);
     VecGetSubVector(X, is, &x_short);
     VecGetSubVector(b, is, &b_short);
     MatMult(C, x_short, r); // r=Ax
@@ -344,7 +344,7 @@ PetscErrorCode test_2D() {
 #else
     Vec x_short;
     IS is;
-   	ISCreateStride(PETSC_COMM_WORLD, N, 0, 1, &is);
+    ISCreateStride(PETSC_COMM_WORLD, N, 0, 1, &is);
     VecGetSubVector(X, is, &x_short);
     VecAXPY(X_ref, -1, x_short);
 #endif
