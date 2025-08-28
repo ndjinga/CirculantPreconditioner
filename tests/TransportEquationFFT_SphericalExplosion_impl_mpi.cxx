@@ -64,7 +64,7 @@ void TransportEquationFFT_impl_mpi(double tmax, int ntmax, double cfl, int outpu
  
      /* iteration vectors */
     VecCreateMPI(PETSC_COMM_WORLD,PETSC_DECIDE    ,nbCells,&Un);
-   VecDuplicate (Un,&dUn);
+    VecDuplicate (Un,&dUn);
  
     if(rank == 0)
     {
@@ -91,12 +91,7 @@ void TransportEquationFFT_impl_mpi(double tmax, int ntmax, double cfl, int outpu
     VecAssemblyBegin(Un);
     VecAssemblyEnd(Un);
     
-    // MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
-    // MatAssemblyEnd(  A, MAT_FINAL_ASSEMBLY);
-
     MPI_Bcast(&dt, 1, MPI_DOUBLE, 0, PETSC_COMM_WORLD);
-
-    // MatShift( A, 1);//Contribution from the time derivative
 
     /* Implicit matrix */
     Mat FFT_MAT;
@@ -138,9 +133,6 @@ void TransportEquationFFT_impl_mpi(double tmax, int ntmax, double cfl, int outpu
                 temperature_field.setTime(time,it);
                 temperature_field.writeMED(resultDirectory+"/TransportEquation"+to_string(dim)+"DUpwind_"+to_string(size)+"Procs_"+meshName+"_temperature",false);
             }
-            //KSPGetConvergedReason( ksp,&reason);
-            //KSPGetIterationNumber( ksp, &PetscIts);
-            //KSPGetResidualNorm(ksp,&residu);
         }
     }
 
