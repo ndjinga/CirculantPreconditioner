@@ -335,6 +335,7 @@ PetscErrorCode test_2D() {
 #endif
     VecNorm(r, NORM_2, &rnorm);
     PetscPrintf(PETSC_COMM_WORLD, "Relative residual = %e\n", rnorm / b_norm);
+    assert( rnorm / b_norm<1);
 
     // Compute relative error
     VecNorm(X_ref, NORM_2, &X_ref_norm);
@@ -349,6 +350,7 @@ PetscErrorCode test_2D() {
 #endif
     VecNorm(X_ref, NORM_2, &enorm);
     PetscPrintf(PETSC_COMM_WORLD, "Relative error = %e\n", enorm / X_ref_norm);
+    assert( enorm / X_ref_norm);
 
     // Clean up
     PetscCall(VecDestroy(&b));

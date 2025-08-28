@@ -149,7 +149,7 @@ PetscErrorCode test_3D() {
 #else
     Vec x_short, b_short;
     IS is;
-   	ISCreateStride(PETSC_COMM_WORLD, N, 0, 1, &is);
+    ISCreateStride(PETSC_COMM_WORLD, N, 0, 1, &is);
     VecGetSubVector(X, is, &x_short);
     VecGetSubVector(b, is, &b_short);
     MatMult(C, x_short, r); // r=Ax
@@ -157,6 +157,7 @@ PetscErrorCode test_3D() {
 #endif
     VecNorm(r, NORM_2, &rnorm);
     PetscPrintf(PETSC_COMM_WORLD, "Relative residual = %e\n", rnorm / b_norm);
+    assert( rnorm / b_norm<1);
 
     // Compute relative error
     VecNorm(X_ref, NORM_2, &X_ref_norm);
@@ -165,12 +166,13 @@ PetscErrorCode test_3D() {
 #else
     Vec x_short;
     IS is;
-   	ISCreateStride(PETSC_COMM_WORLD, N, 0, 1, &is);
+    ISCreateStride(PETSC_COMM_WORLD, N, 0, 1, &is);
     VecGetSubVector(X, is, &x_short);
     VecAXPY(X_ref, -1, x_short);
 #endif
     VecNorm(X_ref, NORM_2, &enorm);
     PetscPrintf(PETSC_COMM_WORLD, "Relative error = %e\n", enorm / X_ref_norm);
+    assert( enorm / X_ref_norm);
 
     // Clean up
     PetscCall(VecDestroy(&b));

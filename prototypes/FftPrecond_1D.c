@@ -200,7 +200,8 @@ int main(int argc, char **argv) {
 
     VecNorm(r, NORM_2, &rnorm);
     PetscPrintf(PETSC_COMM_WORLD, "\n norme du résidu = %e\n", rnorm );
-
+    assert(rnorm<1);
+    
  // Clean up
     PetscCall(VecDestroy(&b));
     PetscCall(VecDestroy(&x));
