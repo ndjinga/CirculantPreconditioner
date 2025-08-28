@@ -4,7 +4,7 @@
 #include <petscmat.h>
 #include <petscvec.h>
 
-struct CustomContext {
+struct StructuredTransportContext {
     PetscInt n_x;
     PetscInt n_y;
     PetscInt n_z;
@@ -30,7 +30,7 @@ PetscErrorCode Fft2DTransportSolver(PetscInt n_x, PetscInt n_y,
 
 PetscErrorCode Fft1DTransportSolver(PetscInt n_x, PetscScalar a_x, PetscScalar dt, PetscScalar delta_x, Vec X, Vec b, Mat FFT_MAT);
 
-PetscErrorCode PetscFft3DTransportSolver(struct CustomContext customCtx , Vec b, Vec x);
+PetscErrorCode PetscFft3DTransportSolver(struct StructuredTransportContext customCtx , Vec b, Vec x);
 
 
 #endif // FFT_PRECOND_3D_H

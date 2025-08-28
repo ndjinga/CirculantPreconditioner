@@ -282,7 +282,7 @@ PetscErrorCode Fft1DTransportSolver(PetscInt n_x, PetscScalar a_x, PetscScalar d
     PetscFunctionReturn(PETSC_SUCCESS);
 }
 
-PetscErrorCode PetscFft3DTransportSolver(struct CustomContext customCtx , Vec b, Vec x) {
+PetscErrorCode PetscFft3DTransportSolver(struct StructuredTransportContext customCtx , Vec b, Vec x) {
     PetscFunctionBeginUser;
     
     PetscCall(Fft3DTransportSolver(customCtx.n_x, customCtx.n_y, customCtx.n_z,

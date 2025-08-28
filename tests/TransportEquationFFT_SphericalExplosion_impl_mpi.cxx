@@ -1,5 +1,5 @@
 //============================================================================
-// Author      : Michael NDJINGA
+// Author      : Michael NDJINGA, Marwane Kadouci
 // Date        : Août 2025
 // Description : multiD linear transport equation run in parallel with calls to MPI
 //               \partial_t u + \vec a \cdot \vec\nabla u = 0
@@ -103,7 +103,7 @@ void TransportEquationFFT_impl_mpi(double tmax, int ntmax, double cfl, int outpu
     PetscInt ndim = 3;
     PetscInt dims[3] = {nz, ny, nx};
     MatCreateFFT(PETSC_COMM_WORLD, ndim, dims, MATFFTW, &FFT_MAT);
-    CustomContext ctx = {nx, ny, nz, vitesseTransport[0], vitesseTransport[1], vitesseTransport[2], dt, delta_x, delta_y, delta_z, FFT_MAT};
+    StructuredTransportContext ctx = {nx, ny, nz, vitesseTransport[0], vitesseTransport[1], vitesseTransport[2], dt, delta_x, delta_y, delta_z, FFT_MAT};
     
     //MatCreateShell(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, globalNbUnknowns, globalNbUnknowns, &ctx, &A);
     //MatShellSetOperation(A, MATOP_MULT, (void(*)(void))PetscFft3DTransportSolver);
