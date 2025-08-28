@@ -39,6 +39,7 @@ INCLUDE_DIRECTORIES(
  add_test(NAME testTransportEquationFFT_SphericalExplosion_impl_seq_1D_SEGMENT_segments  COMMAND "./TransportEquationFFT_SphericalExplosion_impl" "10"       )
  add_test(NAME testTransportEquationFFT_SphericalExplosion_impl_seq_2D_SQUARE_squares    COMMAND "./TransportEquationFFT_SphericalExplosion_impl" "10" "10"    )
  add_test(NAME testTransportEquationFFT_SphericalExplosion_impl_seq_3D_CUBE_cubes        COMMAND "./TransportEquationFFT_SphericalExplosion_impl" "10" "10" "10" )
+ add_test(NAME testTransportEquationFFT_SphericalExplosion_impl_seq_3D_CUBE_cubes_gros        COMMAND "./TransportEquationFFT_SphericalExplosion_impl" "100" "100" "100" )
 
  set_tests_properties( 
  testWaveSystem_SphericalExplosion_expl_seq_2D_SQUARE_squares 
@@ -53,6 +54,7 @@ INCLUDE_DIRECTORIES(
  testTransportEquationFFT_SphericalExplosion_impl_seq_1D_SEGMENT_segments
  testTransportEquationFFT_SphericalExplosion_impl_seq_2D_SQUARE_squares
  testTransportEquationFFT_SphericalExplosion_impl_seq_3D_CUBE_cubes
+ testTransportEquationFFT_SphericalExplosion_impl_seq_3D_CUBE_cubes_gros
  PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${SOLVERLAB_DIR}/lib:${MEDCOUPLING_DIR}/lib:${MEDFILE_DIR}/lib"
  )
 

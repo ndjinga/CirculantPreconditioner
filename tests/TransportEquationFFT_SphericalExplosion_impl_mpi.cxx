@@ -8,6 +8,10 @@
 #include "TransportEquation2.hxx"
 #include "CdmathException.hxx"
 
+extern "C" {
+    #include "FftPrecond_3D.h"
+}
+
 using namespace std;
 
 
@@ -20,32 +24,10 @@ void TransportEquationFFT_impl_mpi(double tmax, int ntmax, double cfl, int outpu
     double dt;
     double norm;
 
-    /* Collect mesh data */
-    int nx = my_mesh.getNx();
-    int ny = my_mesh.getNy();
-    int nz = my_mesh.getNz();
-    double delta_x = ( my_mesh.getXMax() - my_mesh.getXMin() )/nx;
-    double delta_y = ( my_mesh.getYMax() - my_mesh.getYMin() )/ny;
-    double delta_z = ( my_mesh.getZMax() - my_mesh.getZMin() )/nz;
-        
     /* PETSc variables */
-    int globalNbUnknowns;
-    int localNbUnknowns;
-    int d_nnz, o_nnz;
-    Vec Un, dUn, Un_seq;
-    Mat A;
-    VecScatter scat;
+    Vec Un, dUn; // enlever Un
     int idx;//Index where to add the vector values
     PetscScalar value;//value to add in the vector    
-    KSP ksp;
-    KSPType ksptype=(char*)&KSPGMRES;
-    PC pc;
-    PCType pctype=(char*)&PCBJACOBI;
-    int maxPetscIts=1000;//nombre maximum d'iteration gmres autorisé au cours d'une resolution de système lineaire
-    int PetscIts;//the number of iterations performed by the linear solver
-    KSPConvergedReason reason;
-    double residu;
-
     
     /* Mesh parameters managed only by proc 0 */
     int nbCells;
@@ -53,44 +35,35 @@ void TransportEquationFFT_impl_mpi(double tmax, int ntmax, double cfl, int outpu
     Field temperature_field;
     std::string meshName;
 
-    if(rank == 0)
+    
+    /* Retrieve mesh data */
+    nbCells = my_mesh.getNumberOfCells();
+    dim=my_mesh.getMeshDimension();
+    meshName=my_mesh.getName();
+    double dx_min=my_mesh.minRatioVolSurf();
+    dt = cfl * dx_min / vitesseTransport.norm();
+    
+    
+    /* Collect mesh data */
+    int nx, ny, nz;
+    double delta_x, delta_y, delta_z;
+    nx = my_mesh.getNx();
+    delta_x = ( my_mesh.getXMax() - my_mesh.getXMin() )/nx;
+    if(dim>1)
     {
-        /* Retrieve mesh data */
-        nbCells = my_mesh.getNumberOfCells();
-        dim=my_mesh.getMeshDimension();
-        meshName=my_mesh.getName();
-        double dx_min=my_mesh.minRatioVolSurf();
-        dt = cfl * dx_min / vitesseTransport.norm();
-        
-        globalNbUnknowns=nbCells;
-    }
-    MPI_Bcast(&globalNbUnknowns, 1, MPI_INT, 0, PETSC_COMM_WORLD);
+        ny = my_mesh.getNy();
+        delta_y = ( my_mesh.getYMax() - my_mesh.getYMin() )/ny;
+        if(dim>2)
+        {
+            nz = my_mesh.getNz();
+            delta_z = ( my_mesh.getZMax() - my_mesh.getZMin() )/nz;
+        }
+    }    
  
-    /* iteration vectors */
-    VecCreateMPI(PETSC_COMM_WORLD,PETSC_DECIDE    ,globalNbUnknowns,&Un);
-    VecDuplicate (Un,&dUn);
-    if(rank == 0)
-        VecCreateSeq(PETSC_COMM_SELF,globalNbUnknowns,&Un_seq);//For saving results on proc 0
-
-    VecScatterCreateToZero(Un,&scat,&Un_seq);
-
-    /* System matrix */
-    VecGetLocalSize(Un, &localNbUnknowns);
-
-    if(rank == 0)
-    {
-        int nbVoisinsMax = my_mesh.getMaxNbNeighbours(CELLS);
-        d_nnz= nbVoisinsMax+1;
-        o_nnz= nbVoisinsMax   ;
-    }
-    MPI_Bcast(&d_nnz, 1, MPI_INT, 0, PETSC_COMM_WORLD);
-    MPI_Bcast(&o_nnz, 1, MPI_INT, 0, PETSC_COMM_WORLD);
-
-    if(rank == 0)
-        MatCreateAIJ(PETSC_COMM_WORLD,localNbUnknowns,localNbUnknowns,globalNbUnknowns,globalNbUnknowns,d_nnz,NULL,o_nnz+(size-1)*d_nnz,NULL,&A);
-    else
-        MatCreateAIJ(PETSC_COMM_WORLD,localNbUnknowns,localNbUnknowns,globalNbUnknowns,globalNbUnknowns,d_nnz,NULL,o_nnz,NULL,&A);
-
+     /* iteration vectors */
+    VecCreateMPI(PETSC_COMM_WORLD,PETSC_DECIDE    ,nbCells,&Un);
+   VecDuplicate (Un,&dUn);
+ 
     if(rank == 0)
     {
         /* Initial conditions */
@@ -111,34 +84,41 @@ void TransportEquationFFT_impl_mpi(double tmax, int ntmax, double cfl, int outpu
             value=temperature_field[k];//value to add in the vector
             VecSetValues(Un,1,&idx,&value,INSERT_VALUES);
         }
-        computeDivergenceMatrix( my_mesh, &A, dt, vitesseTransport);
+        // plus besoin car cartesien
+        //computeDivergenceMatrix( my_mesh, &A, dt, vitesseTransport);
     }        
 
     VecAssemblyBegin(Un);
     VecAssemblyEnd(Un);
     
-    MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(  A, MAT_FINAL_ASSEMBLY);
+    // MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+    // MatAssemblyEnd(  A, MAT_FINAL_ASSEMBLY);
 
     MPI_Bcast(&dt, 1, MPI_DOUBLE, 0, PETSC_COMM_WORLD);
 
-    MatShift( A, 1);//Contribution from the time derivative
+    // MatShift( A, 1);//Contribution from the time derivative
+
+    /* Implicit matrix */
+    Mat FFT_MAT;
+    PetscInt ndim = 3;
+    PetscInt dims[3] = {nz, ny, nx};
+    MatCreateFFT(PETSC_COMM_WORLD, ndim, dims, MATFFTW, &FFT_MAT);
+    CustomContext ctx = {nx, ny, nz, vitesseTransport[0], vitesseTransport[1], vitesseTransport[2], dt, delta_x, delta_y, delta_z, FFT_MAT};
     
-    /* PETSc Linear solver (all procs) */
-    KSPCreate(PETSC_COMM_WORLD, &ksp);
-    KSPSetType(ksp, ksptype);
-    KSPSetTolerances( ksp, precision, precision,PETSC_DEFAULT, maxPetscIts);
-    KSPGetPC(ksp, &pc);
-    //PETSc preconditioner
-    PCSetType( pc, pctype);
-    KSPSetOperators(ksp, A, A);
+    //MatCreateShell(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, globalNbUnknowns, globalNbUnknowns, &ctx, &A);
+    //MatShellSetOperation(A, MATOP_MULT, (void(*)(void))PetscFft3DTransportSolver);
+    
 
     /* Time loop */
     PetscPrintf(PETSC_COMM_WORLD,"Starting computation of the linear wave system on all processors : \n\n");
+
+    PetscLogDouble v, w;
     while (it<ntmax && time <= tmax && !isStationary)
     {
         VecCopy(Un,dUn);
-        KSPSolve(ksp, Un, Un);
+        PetscTime(&v);
+        PetscFft3DTransportSolver(ctx, Un, Un);
+        PetscTime(&w);
         VecAXPY(dUn,-1,Un);
         
         time=time+dt;
@@ -149,32 +129,22 @@ void TransportEquationFFT_impl_mpi(double tmax, int ntmax, double cfl, int outpu
         /* Sauvegardes */
         if( it%output_freq==0 or it>=ntmax or isStationary or time >=tmax )
         {
-            PetscPrintf(PETSC_COMM_WORLD,"-- Iteration: %d, time: %f, dt: %f, saving results on processor 0 \n", it, time, dt);
-            VecScatterBegin(scat,Un,Un_seq,INSERT_VALUES,SCATTER_FORWARD);
-            VecScatterEnd(  scat,Un,Un_seq,INSERT_VALUES,SCATTER_FORWARD);
+            PetscPrintf(PETSC_COMM_WORLD,"-- Pas de temps: %d, time: %f, dt: %f, solve cpu time : %f ,saving results on processor 0 \n", it, time, dt, w - v);
 
             if(rank == 0)
             {
                 for(int k=0; k<nbCells; k++)
                 {
                     idx = k+0;
-                    VecGetValues(Un_seq,1,&idx,&value);
+                    VecGetValues(Un,1,&idx,&value);
                     temperature_field[k]  = PetscRealPart(value);
                 }
                 temperature_field.setTime(time,it);
                 temperature_field.writeMED(resultDirectory+"/TransportEquation"+to_string(dim)+"DUpwind_"+to_string(size)+"Procs_"+meshName+"_temperature",false);
             }
-            KSPGetConvergedReason( ksp,&reason);
-            KSPGetIterationNumber( ksp, &PetscIts);
-            KSPGetResidualNorm(ksp,&residu);
-            if (reason!=2 and reason!=3)
-            {
-                    PetscPrintf(PETSC_COMM_WORLD,"!!!!!!!!!!!!! Erreur système linéaire : pas de convergence de Petsc.\n");
-                    PetscPrintf(PETSC_COMM_WORLD,"!!!!!!!!!!!!! Itérations maximales %d atteintes, résidu = %1.2e, précision demandée= %1.2e.\n",maxPetscIts,residu,precision);
-                    PetscPrintf(PETSC_COMM_WORLD,"Solver used %s, preconditioner %s, Final number of iteration = %d.\n",ksptype,pctype,PetscIts);
-            }
-            else
-                PetscPrintf(PETSC_COMM_WORLD,"## Système linéaire résolu en %d itérations par le solveur %s et le preconditioneur %s, précision demandée = %1.2e, résidu final  = %1.2e\n",PetscIts,ksptype,pctype,precision, residu);        
+            //KSPGetConvergedReason( ksp,&reason);
+            //KSPGetIterationNumber( ksp, &PetscIts);
+            //KSPGetResidualNorm(ksp,&residu);
         }
     }
 
@@ -187,9 +157,8 @@ void TransportEquationFFT_impl_mpi(double tmax, int ntmax, double cfl, int outpu
         PetscPrintf(PETSC_COMM_WORLD, "Temps maximum tmax= %f atteint\n", tmax);
 
     VecDestroy(&Un);
-    VecDestroy(&Un_seq);
+    VecDestroy(&Un);
     VecDestroy(&dUn);
-    MatDestroy(&A);
 }
  
 int main(int argc, char *argv[])
@@ -218,7 +187,7 @@ int main(int argc, char *argv[])
         
     if(rank == 0)
     {
-        cout << "-- Starting the RESOLUTION OF THE 2D WAVE SYSTEM on "<< size <<" processors"<<endl;
+        cout << "-- Starting the FFT RESOLUTION OF THE Transport equation on "<< size <<" processors"<<endl;
         cout << "- Numerical scheme : Upwind implicit scheme" << endl;
         cout << "- Boundary conditions : WALL" << endl;
     

@@ -32,7 +32,7 @@ void TransportEquation_impl_mpi(double tmax, int ntmax, double cfl, int output_f
     KSP ksp;
     KSPType ksptype=(char*)&KSPGMRES;
     PC pc;
-    PCType pctype=(char*)&PCBJACOBI;
+    PCType pctype=(char*)&PCNONE;
     int maxPetscIts=1000;//nombre maximum d'iteration gmres autorisé au cours d'une resolution de système lineaire
     int PetscIts;//the number of iterations performed by the linear solver
     KSPConvergedReason reason;
@@ -127,10 +127,14 @@ void TransportEquation_impl_mpi(double tmax, int ntmax, double cfl, int output_f
 
     /* Time loop */
     PetscPrintf(PETSC_COMM_WORLD,"Starting computation of the linear wave system on all processors : \n\n");
+
+    PetscLogDouble v, w;
     while (it<ntmax && time <= tmax && !isStationary)
     {
         VecCopy(Un,dUn);
+        PetscTime(&v);
         KSPSolve(ksp, Un, Un);
+        PetscTime(&w);
         VecAXPY(dUn,-1,Un);
         
         time=time+dt;
@@ -141,7 +145,7 @@ void TransportEquation_impl_mpi(double tmax, int ntmax, double cfl, int output_f
         /* Sauvegardes */
         if( it%output_freq==0 or it>=ntmax or isStationary or time >=tmax )
         {
-            PetscPrintf(PETSC_COMM_WORLD,"-- Iteration: %d, time: %f, dt: %f, saving results on processor 0 \n", it, time, dt);
+            PetscPrintf(PETSC_COMM_WORLD,"-- Pas de temps: %d, time: %f, dt: %f, solve cpu time : %f ,saving results on processor 0 \n", it, time, dt, w - v);
             VecScatterBegin(scat,Un,Un_seq,INSERT_VALUES,SCATTER_FORWARD);
             VecScatterEnd(  scat,Un,Un_seq,INSERT_VALUES,SCATTER_FORWARD);
 
@@ -210,13 +214,13 @@ int main(int argc, char *argv[])
         
     if(rank == 0)
     {
-        cout << "-- Starting the RESOLUTION OF THE 2D WAVE SYSTEM on "<< size <<" processors"<<endl;
         cout << "- Numerical scheme : Upwind implicit scheme" << endl;
         cout << "- Boundary conditions : WALL" << endl;
     
         /* Read or create mesh */
         if(argc<2)
         {
+            cout << "-- Starting the RESOLUTION OF THE 3D Transport equation on "<< size <<" processors"<<endl;
             cout << "- DOMAIN : SQUARE" << endl;
             cout << "- MESH : CARTESIAN, GENERATED INTERNALLY WITH CDMATH" << endl<< endl;
             cout << "Construction of a cartesian mesh on processor 0" << endl;
@@ -224,14 +228,19 @@ int main(int argc, char *argv[])
             double xsup= 0.5;
             double yinf=-0.5;
             double ysup= 0.5;
-            int nx=50;
-            int ny=50;
-            myMesh=Mesh(xinf,xsup,nx,yinf,ysup,ny);
+            double zinf=-0.5;
+            double zsup= 0.5;
+            int nx=100;
+            int ny=100;
+            int nz=100;
+            myMesh=Mesh(xinf,xsup,nx,yinf,ysup,ny,zinf,zsup,nz);
             
             myMesh.setGroupAtPlan(xsup,0,precision,"RightEdge");
             myMesh.setGroupAtPlan(xinf,0,precision,"LeftEdge");
             myMesh.setGroupAtPlan(yinf,1,precision,"BottomEdge");
             myMesh.setGroupAtPlan(ysup,1,precision,"TopEdge");
+            myMesh.setGroupAtPlan(zsup,2,precision,"FronttEdge");
+            myMesh.setGroupAtPlan(zinf,2,precision,"BackEdge");
         }
         else
         {
