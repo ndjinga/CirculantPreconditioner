@@ -3,9 +3,9 @@
 
 #include "FftNumericalSolver_3D.h"
 
-/* The function VecPointwiseDivideForRealFFT should be compiled only when petsc was buil with real numbers (not complex numbers) */
+/* The function VecPointwiseDivideForRealFFT should be compiled only when petsc was built with real numbers (not complex numbers) */
 #if !defined(PETSC_USE_COMPLEX)
-PetscErrorCode buildComplexRatio( PetscInt i, Vec v2, Vec v3, PetscReal* z1r, PetscReal* z1i) {
+PetscErrorCode buildComplexRatio( PetscInt i, Vec v2, Vec v3, PetscReal* z1r, PetscReal* z1i) {//To do : inline this function and avoid loading each coefficient twice
     PetscFunctionBeginUser;
     PetscInt idx;
     PetscReal   z2r, z3r, z2i, z3i, z3_2;
@@ -53,7 +53,7 @@ PetscErrorCode VecPointwiseDivideForRealFFT( Vec v1, Vec v2, Vec v3) {
 
     for( PetscInt i = istart ; i < iend && i < 2*(size/4+1) ; i+=2)//loop with no communication involved, size/4+1 complex numbers are stored in the real fft vector
     {
-        buildComplexRatio( i, v2, v3, &z1r, &z1i);//computes z2/z3
+        buildComplexRatio( i, v2, v3, &z1r, &z1i);//computes z2/z3  //This loads each coefficient twice so suboptimal
         idx = i;
         VecSetValues(v1,1,&idx,&z1r,INSERT_VALUES);
         idx = i+1;
@@ -80,8 +80,12 @@ PetscErrorCode VecPointwiseDivideForRealFFT( Vec v1, Vec v2, Vec v3) {
 PetscErrorCode build_transport_col(Vec c, PetscInt size) {
     PetscFunctionBeginUser;
     VecSet(c, 0.0);
-    VecSetValue(c, 0, 1.0, INSERT_VALUES);
-    VecSetValue(c, 1, -1.0, INSERT_VALUES);
+    if( size>1 )
+    {
+        VecSetValue(c, 0, 1.0, INSERT_VALUES);
+        VecSetValue(c, 1, -1.0, INSERT_VALUES);
+    }
+
     PetscFunctionReturn(PETSC_SUCCESS);
 }
 
