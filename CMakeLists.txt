@@ -23,6 +23,7 @@ set (MEDFILE_DIR          OFF CACHE STRING "MEDFILE library path" )
 set(MY_SOURCES
 src/WaveSystem.cxx
 src/TransportEquation.cxx
+src/FftPrecond_3D.c
 )
 set(MY_HEADERS
 ${PROJECT_SOURCE_DIR}/src/
