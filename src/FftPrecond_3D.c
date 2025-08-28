@@ -190,7 +190,7 @@ PetscErrorCode solve_3D(Mat FFT_MAT, Vec X, Vec Diag, Vec b, Vec b_hat) {
 PetscErrorCode Fft3DSolver(PetscInt n_x, PetscInt n_y, PetscInt n_z,
     PetscScalar a_x, PetscScalar a_y, PetscScalar a_z, PetscScalar dt,
     PetscScalar delta_x, PetscScalar delta_y, PetscScalar delta_z,
-    Vec X, Vec b, Mat FFT_MAT, Vec c_x, Vec c_y, Vec c_z) {
+    Vec X, Vec b, Mat FFT_MAT, Vec c_x_hat, Vec c_y_hat, Vec c_z_hat) {
     
     PetscFunctionBeginUser;
 
@@ -208,7 +208,7 @@ PetscErrorCode Fft3DSolver(PetscInt n_x, PetscInt n_y, PetscInt n_z,
     PetscCall(MatCreateVecsFFTW( FFT_MAT, NULL, &b_hat, NULL));
 
     // Solve the system
-    build_diag_mat_vec_3D(Diag, c_x, c_y, c_z, n_x, n_y, n_z, lambda_x, lambda_y, lambda_z);
+    build_diag_mat_vec_3D(Diag, c_x_hat, c_y_hat, c_z_hat, n_x, n_y, n_z, lambda_x, lambda_y, lambda_z);
     solve_3D(FFT_MAT, X, Diag, b, b_hat);
 
     // Clean up
@@ -253,7 +253,7 @@ PetscErrorCode Fft3DTransportSolver(PetscInt n_x, PetscInt n_y, PetscInt n_z,
     MatMult(FFT_cy, c_y, c_y_hat);
     MatMult(FFT_cz, c_z, c_z_hat);
     
-    PetscCall(Fft3DSolver(n_x, n_y, n_z, a_x, a_y, a_z, dt, delta_x, delta_y, delta_z, X, b, FFT_MAT, c_x, c_y, c_z));
+    PetscCall(Fft3DSolver(n_x, n_y, n_z, a_x, a_y, a_z, dt, delta_x, delta_y, delta_z, X, b, FFT_MAT, c_x_hat, c_y_hat, c_z_hat));
     
     PetscCall(VecDestroy(&c_x));
     PetscCall(VecDestroy(&c_y));
