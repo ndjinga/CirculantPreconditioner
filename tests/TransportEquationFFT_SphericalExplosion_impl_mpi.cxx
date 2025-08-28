@@ -1,15 +1,17 @@
 //============================================================================
 // Author      : Michael NDJINGA, Marwane Kadouci
 // Date        : Août 2025
-// Description : multiD linear transport equation run in parallel with calls to MPI
+// Description : multiD linear transport equation on cartesian mesh
 //               \partial_t u + \vec a \cdot \vec\nabla u = 0
+//               linear systems solved with FFT direct solver
+//               run in parallel with calls to MPI
 //============================================================================
 
 #include "TransportEquation2.hxx"
 #include "CdmathException.hxx"
 
 extern "C" {
-    #include "FftPrecond_3D.h"
+    #include "FftNumericalSolver_3D.h"
 }
 
 using namespace std;
@@ -84,8 +86,6 @@ void TransportEquationFFT_impl_mpi(double tmax, int ntmax, double cfl, int outpu
             value=temperature_field[k];//value to add in the vector
             VecSetValues(Un,1,&idx,&value,INSERT_VALUES);
         }
-        // plus besoin car cartesien
-        //computeDivergenceMatrix( my_mesh, &A, dt, vitesseTransport);
     }        
 
     VecAssemblyBegin(Un);
@@ -105,10 +105,6 @@ void TransportEquationFFT_impl_mpi(double tmax, int ntmax, double cfl, int outpu
     MatCreateFFT(PETSC_COMM_WORLD, ndim, dims, MATFFTW, &FFT_MAT);
     StructuredTransportContext ctx = {nx, ny, nz, vitesseTransport[0], vitesseTransport[1], vitesseTransport[2], dt, delta_x, delta_y, delta_z, FFT_MAT};
     
-    //MatCreateShell(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, globalNbUnknowns, globalNbUnknowns, &ctx, &A);
-    //MatShellSetOperation(A, MATOP_MULT, (void(*)(void))PetscFft3DTransportSolver);
-    
-
     /* Time loop */
     PetscPrintf(PETSC_COMM_WORLD,"Starting computation of the linear wave system on all processors : \n\n");
 
