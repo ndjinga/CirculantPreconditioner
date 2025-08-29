@@ -24,6 +24,7 @@ set(MY_SOURCES
 src/WaveSystem.cxx
 src/TransportEquation.cxx
 src/FftLinearSolver_3D.c
+src/PCSHELLFft_3D.cxx
 )
 set(MY_HEADERS
 ${PROJECT_SOURCE_DIR}/src/
