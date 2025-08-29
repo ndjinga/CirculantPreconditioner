@@ -1,7 +1,7 @@
 #include <petscmat.h>
 #include <petscvec.h>
 
-#include "FftNumericalSolver_3D.h"
+#include "FftLinearSolver_3D.h"
 
 /* The function VecPointwiseDivideForRealFFT should be compiled only when petsc was built with real numbers (not complex numbers) */
 #if !defined(PETSC_USE_COMPLEX)

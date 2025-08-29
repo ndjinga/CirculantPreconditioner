@@ -11,7 +11,7 @@
 #include "CdmathException.hxx"
 
 extern "C" {
-    #include "FftNumericalSolver_3D.h"
+    #include "FftLinearSolver_3D.h"
 }
 
 using namespace std;
