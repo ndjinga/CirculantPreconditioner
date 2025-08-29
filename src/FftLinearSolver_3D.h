@@ -32,5 +32,9 @@ PetscErrorCode Fft1DTransportSolver(PetscInt n_x, PetscScalar a_x, PetscScalar d
 
 PetscErrorCode PetscFft3DTransportSolver(struct StructuredTransportContext customCtx , Vec b, Vec x);
 
+PetscErrorCode FftTransportSolver(PetscInt n_x, PetscInt n_y, PetscInt n_z,
+    PetscScalar lambda_x, PetscScalar lambda_y, PetscScalar lambda_z,
+    Vec X, Vec b, Mat FFT_MAT);
+
 
 #endif // FFT_PRECOND_3D_H
