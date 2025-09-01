@@ -36,5 +36,10 @@ PetscErrorCode FftTransportSolver(PetscInt n_x, PetscInt n_y, PetscInt n_z,
     PetscScalar lambda_x, PetscScalar lambda_y, PetscScalar lambda_z,
     Vec X, Vec b, Mat FFT_MAT);
 
+PetscErrorCode solve_3D(Mat FFT_MAT, Vec X, Vec Diag, Vec b, Vec b_hat, PetscInt size);
+
+PetscErrorCode build_diag_mat_vec_3D(Vec Diag, Vec c_x_hat, Vec c_y_hat, Vec c_z_hat, PetscInt n_x, PetscInt n_y, PetscInt n_z, PetscScalar lambda_x, PetscScalar lambda_y, PetscScalar lambda_z);
+
+PetscErrorCode build_transport_col(Vec c, PetscInt size);
 
 #endif // FFT_PRECOND_3D_H
