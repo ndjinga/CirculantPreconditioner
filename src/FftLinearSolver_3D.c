@@ -82,7 +82,7 @@ PetscErrorCode build_transport_col(Vec c, PetscInt size) {
     VecSet(c, 0.0);
     if( size>1 )
     {
-        VecSetValue(c, 0, 1.0, INSERT_VALUES);
+        VecSetValue(c, 0,  1.0, INSERT_VALUES);
         VecSetValue(c, 1, -1.0, INSERT_VALUES);
     }
 
@@ -163,9 +163,8 @@ PetscErrorCode build_diag_mat_vec_3D(Vec Diag, Vec c_x_hat, Vec c_y_hat, Vec c_z
     PetscFunctionReturn(PETSC_SUCCESS);
 }
 
-PetscErrorCode solve_3D(Mat FFT_MAT, Vec X, Vec Diag, Vec b, Vec b_hat) {
+PetscErrorCode solve_3D(Mat FFT_MAT, Vec X, Vec Diag, Vec b, Vec b_hat, PetscInt size) {
     PetscFunctionBeginUser;
-    PetscInt size;
 
     // FFT
     PetscCall(MatMult(FFT_MAT, b, b_hat));
@@ -181,7 +180,6 @@ PetscErrorCode solve_3D(Mat FFT_MAT, Vec X, Vec Diag, Vec b, Vec b_hat) {
     PetscCall(MatMultTranspose(FFT_MAT, b_hat, X));
 
     // Normalize
-    PetscCall(VecGetSize(X, &size));
 #if defined(PETSC_USE_COMPLEX)
     VecScale(X,1./size);
 #else
@@ -196,17 +194,18 @@ PetscErrorCode Fft3DSolver( PetscInt n_x, PetscInt n_y, PetscInt n_z, PetscScala
     
     PetscFunctionBeginUser;
 
-    // Variables
+    PetscInt size;
     Vec b_hat; // fft of b
     Vec Diag; // vector of the diagonal matrix
 
     // Initialize vectors
+    PetscCall(VecGetSize(X, &size));
     PetscCall(MatCreateVecsFFTW( FFT_MAT, NULL, &Diag, NULL));
     PetscCall(MatCreateVecsFFTW( FFT_MAT, NULL, &b_hat, NULL));
 
     // Solve the system
     build_diag_mat_vec_3D(Diag, c_x_hat, c_y_hat, c_z_hat, n_x, n_y, n_z, lambda_x, lambda_y, lambda_z);
-    solve_3D(FFT_MAT, X, Diag, b, b_hat);
+    solve_3D(FFT_MAT, X, Diag, b, b_hat, size);
 
     // Clean up
     PetscCall(VecDestroy(&Diag));
@@ -254,6 +253,12 @@ PetscErrorCode FftTransportSolver(PetscInt n_x, PetscInt n_y, PetscInt n_z,
     PetscCall(VecDestroy(&c_x));
     PetscCall(VecDestroy(&c_y));
     PetscCall(VecDestroy(&c_z));
+    PetscCall(VecDestroy(&c_x_hat));
+    PetscCall(VecDestroy(&c_y_hat));
+    PetscCall(VecDestroy(&c_z_hat));
+    PetscCall(MatDestroy(&FFT_cx));
+    PetscCall(MatDestroy(&FFT_cy));
+    PetscCall(MatDestroy(&FFT_cz));
 
     PetscFunctionReturn(PETSC_SUCCESS);
 }
